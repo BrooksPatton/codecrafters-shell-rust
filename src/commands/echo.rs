@@ -1,4 +1,4 @@
-pub fn echo(user_input: Vec<String>) {
+pub fn echo(user_input: &[String]) {
     let message = user_input.join(" ");
     println!("{message}");
 }
