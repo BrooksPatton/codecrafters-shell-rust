@@ -10,8 +10,9 @@ pub fn builtin_type(arguments: CommandArguments) {
     if matches!(command, Command::NotFound(_)) {
         message.push(format!(": not found"));
     } else {
-        message.push("is a shell builtin".to_owned());
+        message.push(" is a shell builtin".to_owned());
     }
 
-    echo(&message)
+    let message = message.join("");
+    echo(&[message])
 }
