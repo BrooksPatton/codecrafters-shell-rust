@@ -10,7 +10,7 @@ use anyhow::{Context, Result};
 use crate::{
     commands::Command,
     errors::CustomError,
-    utilities::{exit, get_command, print_error, print_prompt},
+    utilities::{get_command, print_error, print_prompt},
 };
 
 pub fn run() -> Result<()> {
@@ -20,7 +20,7 @@ pub fn run() -> Result<()> {
         let command = get_command().context("getting command")?;
 
         match command {
-            Command::Exit => exit(0),
+            Command::Exit => break,
             Command::NotFound(command_string) => {
                 let error = CustomError::CommandNotFound(command_string);
                 print_error(error);
@@ -28,6 +28,5 @@ pub fn run() -> Result<()> {
         }
     }
 
-    #[allow(unreachable_code)]
     Ok(())
 }
