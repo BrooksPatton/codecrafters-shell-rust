@@ -12,12 +12,15 @@ use crate::{
 };
 
 pub fn run() -> Result<()> {
-    print!("$ ");
-    io::stdout().flush().unwrap();
-    let user_input = get_user_input()?;
-    let error = CustomError::CommandNotFound(user_input);
+    loop {
+        print!("$ ");
+        io::stdout().flush().unwrap();
+        let user_input = get_user_input()?;
+        let error = CustomError::CommandNotFound(user_input);
 
-    print_error(error);
+        print_error(error);
+    }
 
+    #[allow(unreachable_code)]
     Ok(())
 }
