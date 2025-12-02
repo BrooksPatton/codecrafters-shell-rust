@@ -1,13 +1,11 @@
-use std::process;
-
-use codecrafters_shell::run;
+use codecrafters_shell::{run, utilities::exit};
 
 fn main() {
     match run() {
-        Ok(()) => process::exit(0),
+        Ok(()) => exit(0),
         Err(error) => {
             eprintln!("Error: ${error}");
-            process::exit(1);
+            exit(1);
         }
     }
 }
