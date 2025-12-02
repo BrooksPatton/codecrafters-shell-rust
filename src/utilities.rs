@@ -1,12 +1,10 @@
+use crate::commands::Command;
+use anyhow::{Context, Result};
+pub use std::process::exit;
 use std::{
     fmt::Display,
     io::{self, Write, stdin},
-    process,
 };
-
-use anyhow::{Context, Result};
-
-use crate::commands::Command;
 
 pub fn get_user_input() -> Result<String> {
     let mut user_input = String::new();
@@ -27,11 +25,12 @@ pub fn print_prompt() {
 
 pub fn get_command() -> Result<Command> {
     let user_input = get_user_input()?;
-    let command = Command::from(user_input.as_str());
+    let mut split_user_input = user_input.split_whitespace();
+    let command_input = split_user_input.next().unwrap_or(" ").to_owned();
+    let arguments = split_user_input
+        .map(ToOwned::to_owned)
+        .collect::<Vec<String>>();
+    let command = Command::from((command_input, arguments));
 
     Ok(command)
-}
-
-pub fn exit(code: i32) {
-    process::exit(code);
 }

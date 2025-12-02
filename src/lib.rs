@@ -8,7 +8,7 @@ use std::io::{self, Write};
 use anyhow::{Context, Result};
 
 use crate::{
-    commands::Command,
+    commands::{Command, echo::echo},
     errors::CustomError,
     utilities::{get_command, print_error, print_prompt},
 };
@@ -20,6 +20,7 @@ pub fn run() -> Result<()> {
         let command = get_command().context("getting command")?;
 
         match command {
+            Command::Echo(command_string) => echo(command_string),
             Command::Exit => break,
             Command::NotFound(command_string) => {
                 let error = CustomError::CommandNotFound(command_string);
