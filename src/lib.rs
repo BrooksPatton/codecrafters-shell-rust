@@ -2,17 +2,12 @@ mod builtin_commands;
 mod errors;
 pub mod utilities;
 
-#[allow(unused_imports)]
-use std::io::{self, Write};
-use std::os::unix::ffi::OsStrExt;
-
-use anyhow::{Context, Result};
-
 use crate::{
     builtin_commands::{BuiltinCommand, builtin_type::builtin_type, echo::echo},
     errors::CustomError,
     utilities::{get_command, get_path, print_error, print_prompt},
 };
+use anyhow::{Context, Result};
 
 pub fn run() -> Result<()> {
     let path = get_path().context("Getting path")?;

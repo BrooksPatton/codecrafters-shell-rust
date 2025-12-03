@@ -1,12 +1,11 @@
-use crate::builtin_commands::{BuiltinCommand, echo::echo};
-use anyhow::{Context, Error, Result, anyhow, bail};
-use core::error;
+use crate::builtin_commands::BuiltinCommand;
+use anyhow::{Context, Result, bail};
 pub use std::process::exit;
 use std::{
-    env::{self, SplitPaths, split_paths},
+    env::{self, split_paths},
     fmt::Display,
-    io::{self, ErrorKind, Write, stdin},
-    path::{Path, PathBuf},
+    io::{self, Write, stdin},
+    path::PathBuf,
 };
 
 pub fn get_user_input() -> Result<String> {
