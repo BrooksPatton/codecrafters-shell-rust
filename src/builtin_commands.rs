@@ -3,14 +3,14 @@ pub mod echo;
 
 pub type CommandArguments = Vec<String>;
 
-pub enum Command {
+pub enum BuiltinCommand {
     Echo(CommandArguments),
     Exit,
     Type(CommandArguments),
     NotFound(String),
 }
 
-impl From<(String, CommandArguments)> for Command {
+impl From<(String, CommandArguments)> for BuiltinCommand {
     fn from((command, arguments): (String, CommandArguments)) -> Self {
         match command.as_str() {
             "echo" => Self::Echo(arguments),
@@ -21,7 +21,7 @@ impl From<(String, CommandArguments)> for Command {
     }
 }
 
-impl From<String> for Command {
+impl From<String> for BuiltinCommand {
     fn from(command: String) -> Self {
         let arguments = vec![];
         Self::from((command, arguments))
