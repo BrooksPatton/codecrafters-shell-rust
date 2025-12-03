@@ -4,6 +4,7 @@ pub use std::process::exit;
 use std::{
     env::{self, split_paths},
     fmt::Display,
+    fs::DirEntry,
     io::{self, Write, stdin},
     path::PathBuf,
 };
@@ -48,4 +49,25 @@ pub fn get_path() -> Result<Vec<PathBuf>> {
     });
 
     split_paths.collect()
+}
+
+pub fn find_file(name: &str, paths: &[PathBuf]) -> Option<DirEntry> {
+    for path in paths {
+        let Ok(directory) = std::fs::read_dir(path) else {
+            continue;
+        };
+
+        for dir_entry in directory {
+            let Ok(dir_entry) = dir_entry else {
+                continue;
+            };
+            let file_name = dir_entry.file_name();
+
+            if name == file_name {
+                return Some(dir_entry);
+            }
+        }
+    }
+
+    None
 }
