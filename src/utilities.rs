@@ -62,14 +62,14 @@ pub fn find_files(name: &str, paths: &[PathBuf]) -> Vec<DirEntry> {
 
             for dir_entry in directory {
                 let Ok(dir_entry) = dir_entry else {
-                    return None;
+                    continue;
                 };
                 let file_name = dir_entry.file_name();
 
                 if name == file_name {
                     return Some(dir_entry);
                 } else {
-                    return None;
+                    continue;
                 }
             }
 
@@ -91,8 +91,6 @@ pub fn find_executable_file(name: &str, paths: &[PathBuf]) -> Option<DirEntry> {
         if user_exec || group_exec || other_exec {
             return Some(dir_entry);
         }
-
-        println!("found file {name} is not executable");
     }
 
     None
