@@ -52,41 +52,46 @@ pub fn get_path() -> Result<Vec<PathBuf>> {
     split_paths.collect()
 }
 
-pub fn find_file(name: &str, paths: &[PathBuf]) -> Option<DirEntry> {
-    for path in paths {
-        let Ok(directory) = std::fs::read_dir(path) else {
-            continue;
-        };
-
-        for dir_entry in directory {
-            let Ok(dir_entry) = dir_entry else {
-                continue;
+pub fn find_files(name: &str, paths: &[PathBuf]) -> Vec<DirEntry> {
+    paths
+        .iter()
+        .filter_map(|path| {
+            let Ok(directory) = std::fs::read_dir(path) else {
+                return None;
             };
-            let file_name = dir_entry.file_name();
 
-            if name == file_name {
-                return Some(dir_entry);
+            for dir_entry in directory {
+                let Ok(dir_entry) = dir_entry else {
+                    return None;
+                };
+                let file_name = dir_entry.file_name();
+
+                if name == file_name {
+                    return Some(dir_entry);
+                } else {
+                    return None;
+                }
             }
+
+            None
+        })
+        .collect()
+}
+
+pub fn find_executable_file(name: &str, paths: &[PathBuf]) -> Option<DirEntry> {
+    let dir_entries = find_files(name, paths);
+
+    for dir_entry in dir_entries {
+        let metadata = dir_entry.metadata().ok()?;
+        let mode = metadata.mode();
+        let user_exec = mode & 0o100 != 0;
+        let group_exec = mode & 0o010 != 0;
+        let other_exec = mode & 0o001 != 0;
+
+        if user_exec || group_exec || other_exec {
+            return Some(dir_entry);
         }
     }
 
     None
-}
-
-pub fn find_executable_file(name: &str, paths: &[PathBuf]) -> Option<DirEntry> {
-    let dir_entry = find_file(name, paths)?;
-    let metadata = dir_entry.metadata().ok()?;
-    let mode = metadata.mode();
-    let user_exec = mode & 0o100 != 0;
-    let group_exec = mode & 0o010 != 0;
-    let other_exec = mode & 0o001 != 0;
-
-    if user_exec || group_exec || other_exec {
-        Some(dir_entry)
-    } else {
-        eprintln!(
-            "File {name} is not executable: {user_exec} {group_exec} {other_exec}. Mode: {mode:o}"
-        );
-        None
-    }
 }
