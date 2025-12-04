@@ -6,6 +6,7 @@ use std::{
     fmt::Display,
     fs::DirEntry,
     io::{self, Write, stdin},
+    os::unix::fs::MetadataExt,
     path::PathBuf,
 };
 
@@ -70,4 +71,19 @@ pub fn find_file(name: &str, paths: &[PathBuf]) -> Option<DirEntry> {
     }
 
     None
+}
+
+pub fn find_executable_file(name: &str, paths: &[PathBuf]) -> Option<DirEntry> {
+    let dir_entry = find_file(name, paths)?;
+    let metadata = dir_entry.metadata().ok()?;
+    let mode = metadata.mode();
+    let user_exec = mode & 0o100 != 0;
+    let group_exec = mode & 0o010 != 0;
+    let other_exec = mode & 0o001 != 0;
+
+    if user_exec || group_exec || other_exec {
+        Some(dir_entry)
+    } else {
+        None
+    }
 }

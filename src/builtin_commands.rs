@@ -7,7 +7,7 @@ pub enum BuiltinCommand {
     Echo(CommandArguments),
     Exit,
     Type(CommandArguments),
-    NotFound(String),
+    NotFound(String, CommandArguments),
 }
 
 impl From<(String, CommandArguments)> for BuiltinCommand {
@@ -16,7 +16,7 @@ impl From<(String, CommandArguments)> for BuiltinCommand {
             "echo" => Self::Echo(arguments),
             "exit" => Self::Exit,
             "type" => Self::Type(arguments),
-            _ => Self::NotFound(command),
+            _ => Self::NotFound(command, arguments),
         }
     }
 }
