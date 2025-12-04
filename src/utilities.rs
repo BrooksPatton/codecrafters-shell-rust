@@ -85,7 +85,7 @@ pub fn find_executable_file(name: &str, paths: &[PathBuf]) -> Option<DirEntry> {
         Some(dir_entry)
     } else {
         eprintln!(
-            "File {name} is not executable: {user_exec} {group_exec} {other_exec}. Mode: {mode}"
+            "File {name} is not executable: {user_exec} {group_exec} {other_exec}. Mode: {mode:o}"
         );
         None
     }
