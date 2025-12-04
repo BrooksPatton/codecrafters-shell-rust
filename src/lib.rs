@@ -15,8 +15,6 @@ use anyhow::{Context, Result};
 pub fn run() -> Result<()> {
     let path = get_path().context("Getting path")?;
 
-    echo(&["paths:", &format!("{path:?}")]);
-
     loop {
         print_prompt();
 
