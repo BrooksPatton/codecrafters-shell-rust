@@ -80,6 +80,7 @@ pub fn find_files(name: &str, paths: &[PathBuf]) -> Vec<DirEntry> {
 
 pub fn find_executable_file(name: &str, paths: &[PathBuf]) -> Option<DirEntry> {
     let dir_entries = find_files(name, paths);
+    println!("{dir_entries:?}");
 
     for dir_entry in dir_entries {
         let metadata = dir_entry.metadata().ok()?;
