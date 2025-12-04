@@ -1,9 +1,13 @@
-use std::fs::DirEntry;
+use std::{fs::DirEntry, os::unix::process::CommandExt};
+
+use crate::builtin_commands::echo::echo;
 
 pub fn run_external_executable(executable: DirEntry, arguments: &[String]) {
-    let path = executable.path();
-    let mut command = std::process::Command::new(path);
+    let name = executable.file_name();
+    let name = name.to_str().unwrap();
+    let mut command = std::process::Command::new(name);
 
+    echo(&["file name:", name]);
     command.args(arguments);
 
     let Ok(mut process_child) = command.spawn() else {
