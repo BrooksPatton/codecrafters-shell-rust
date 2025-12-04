@@ -3,7 +3,10 @@ mod errors;
 pub mod utilities;
 
 use crate::{
-    builtin_commands::{BuiltinCommand, builtin_type::builtin_type, echo::echo},
+    builtin_commands::{
+        BuiltinCommand, builtin_type::builtin_type, echo::echo,
+        run_external_executable::run_external_executable,
+    },
     errors::CustomError,
     utilities::{find_executable_file, get_command, get_path, print_error, print_prompt},
 };
@@ -23,18 +26,7 @@ pub fn run() -> Result<()> {
             BuiltinCommand::Type(arguments) => builtin_type(arguments, &path),
             BuiltinCommand::NotFound(command_string, arguments) => {
                 if let Some(executable) = find_executable_file(&command_string, &path) {
-                    println!("");
-                    let path = executable.path();
-                    let mut command = std::process::Command::new(path);
-
-                    command.args(&arguments);
-
-                    let Ok(mut process_child) = command.spawn() else {
-                        continue;
-                    };
-                    let Ok(_result) = process_child.wait() else {
-                        continue;
-                    };
+                    run_external_executable(executable, &arguments);
                 } else {
                     let error = CustomError::CommandNotFound(command_string);
                     print_error(error);

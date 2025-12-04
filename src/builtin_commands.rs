@@ -1,5 +1,6 @@
 pub mod builtin_type;
 pub mod echo;
+pub mod run_external_executable;
 
 pub type CommandArguments = Vec<String>;
 
