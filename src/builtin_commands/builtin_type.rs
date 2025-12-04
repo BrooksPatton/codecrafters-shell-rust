@@ -31,5 +31,4 @@ pub fn builtin_type(arguments: CommandArguments, paths: &[PathBuf]) {
 
     let message = message.join("");
     echo(&[&message]);
-    echo(&["paths:", &format!("{paths:?}")]);
 }
