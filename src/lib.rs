@@ -17,7 +17,6 @@ pub fn run() -> Result<()> {
 
     loop {
         print_prompt();
-        echo(&["paths:", &format!("{path:?}")]);
 
         let command = get_command().context("getting command")?;
 

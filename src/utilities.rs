@@ -70,6 +70,7 @@ pub fn find_file(name: &str, paths: &[PathBuf]) -> Option<DirEntry> {
         }
     }
 
+    println!("didn't {name} in any of the paths.");
     None
 }
 
