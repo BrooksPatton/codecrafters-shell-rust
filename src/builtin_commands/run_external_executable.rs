@@ -7,7 +7,6 @@ pub fn run_external_executable(executable: DirEntry, arguments: &[String]) {
     let name = name.to_str().unwrap();
     let mut command = std::process::Command::new(name);
 
-    echo(&["file name:", name]);
     command.args(arguments);
 
     let Ok(mut process_child) = command.spawn() else {
