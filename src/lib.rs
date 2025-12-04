@@ -4,7 +4,7 @@ pub mod utilities;
 
 use crate::{
     builtin_commands::{
-        BuiltinCommand, builtin_type::builtin_type, echo::echo,
+        BuiltinCommand, builtin_type::builtin_type, echo::echo, pwd::pwd,
         run_external_executable::run_external_executable,
     },
     errors::CustomError,
@@ -14,6 +14,7 @@ use anyhow::{Context, Result};
 
 pub fn run() -> Result<()> {
     let path = get_path().context("Getting path")?;
+    let current_directory = std::env::current_dir().expect("Error: No current working directory");
 
     loop {
         print_prompt();
@@ -23,6 +24,7 @@ pub fn run() -> Result<()> {
         match command {
             BuiltinCommand::Echo(command_string) => echo(command_string.as_slice()),
             BuiltinCommand::Exit => break,
+            BuiltinCommand::PWD => pwd(current_directory.as_path()),
             BuiltinCommand::Type(arguments) => builtin_type(arguments, &path),
             BuiltinCommand::NotFound(command_string, arguments) => {
                 if let Some(executable) = find_executable_file(&command_string, &path) {
