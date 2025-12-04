@@ -1,6 +1,4 @@
-use std::{fs::DirEntry, os::unix::process::CommandExt};
-
-use crate::builtin_commands::echo::echo;
+use std::fs::DirEntry;
 
 pub fn run_external_executable(executable: DirEntry, arguments: &[String]) {
     let name = executable.file_name();

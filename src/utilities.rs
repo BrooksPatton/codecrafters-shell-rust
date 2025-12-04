@@ -54,6 +54,7 @@ pub fn get_path() -> Result<Vec<PathBuf>> {
 
 pub fn find_file(name: &str, paths: &[PathBuf]) -> Option<DirEntry> {
     for path in paths {
+        eprintln!("path: {path:?}");
         let Ok(directory) = std::fs::read_dir(path) else {
             continue;
         };
