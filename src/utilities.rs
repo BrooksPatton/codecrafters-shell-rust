@@ -29,7 +29,8 @@ pub fn print_prompt() {
 
 pub fn get_command() -> Result<BuiltinCommand> {
     let user_input = get_user_input()?;
-    let (command_input, arguments) = parse_input(user_input);
+    let (command_input, argument_input) = extract_command_from_input(user_input);
+    let arguments = parse_arguments(argument_input);
     let command = BuiltinCommand::from((command_input, arguments));
 
     Ok(command)
@@ -92,8 +93,27 @@ pub fn find_executable_file(name: &str, paths: &[PathBuf]) -> Option<DirEntry> {
     None
 }
 
+fn extract_command_from_input(input: String) -> (String, String) {
+    let mut command_input = String::new();
+    let mut getting_command = true;
+    let mut arguments = String::new();
+
+    for argument_char in input.trim().chars() {
+        if getting_command {
+            if argument_char.is_whitespace() {
+                getting_command = false;
+            } else {
+                command_input.push(argument_char);
+            }
+        } else {
+            arguments.push(argument_char);
+        }
+    }
+
+    (command_input, arguments)
+}
+
 enum ProcessArgumentsState {
-    Command,
     InsideSingleQuotes,
     InsideDoubleQuotes,
     NotInQuotes,
@@ -104,31 +124,13 @@ impl ProcessArgumentsState {
         matches!(self, Self::InsideSingleQuotes) || matches!(self, Self::InsideDoubleQuotes)
     }
 }
-/**
-* Examples:
-* input: 'hello      world'
-* output: ["'hello      world'"]
 
-*input: hello     world
-* output: ["hello", "world"]
-*/
-fn parse_input(input: String) -> (String, Vec<String>) {
+fn parse_arguments(input: String) -> Vec<String> {
     let mut result = vec![];
     let mut current_argument = String::new();
-    let mut state = ProcessArgumentsState::Command;
-    let mut command_input = String::new();
+    let mut state = ProcessArgumentsState::NotInQuotes;
 
     for argument_char in input.trim().chars() {
-        if matches!(state, ProcessArgumentsState::Command) {
-            if argument_char.is_whitespace() {
-                state = ProcessArgumentsState::NotInQuotes;
-                continue;
-            } else {
-                command_input.push(argument_char);
-                continue;
-            }
-        }
-
         match argument_char {
             '\'' => {
                 if matches!(state, ProcessArgumentsState::InsideSingleQuotes) {
@@ -165,5 +167,5 @@ fn parse_input(input: String) -> (String, Vec<String>) {
         result.push(current_argument);
     }
 
-    (command_input, result)
+    result
 }
