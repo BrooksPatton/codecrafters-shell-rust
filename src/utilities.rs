@@ -132,8 +132,6 @@ fn parse_input(input: String) -> (String, Vec<String>) {
         match argument_char {
             '\'' => {
                 if matches!(state, ProcessArgumentsState::InsideSingleQuotes) {
-                    result.push(current_argument.clone());
-                    current_argument.clear();
                     state = ProcessArgumentsState::NotInQuotes;
                 } else {
                     if matches!(state, ProcessArgumentsState::InsideDoubleQuotes) {
