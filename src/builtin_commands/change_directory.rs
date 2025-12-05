@@ -14,9 +14,6 @@ pub fn change_directory(arguments: &[String]) -> Result<()> {
         std::env::set_current_dir(home_directory).context("changing to home directory")?;
         return Ok(());
     };
-
-    let target_path = target_path.replace("~", home_directory.to_str().unwrap_or_default());
-
     let target_path = Path::new(&target_path);
 
     if target_path.is_dir() {

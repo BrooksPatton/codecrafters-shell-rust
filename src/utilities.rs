@@ -29,11 +29,7 @@ pub fn print_prompt() {
 
 pub fn get_command() -> Result<BuiltinCommand> {
     let user_input = get_user_input()?;
-    let mut split_user_input = user_input.split_whitespace();
-    let command_input = split_user_input.next().unwrap_or(" ").to_owned();
-    let arguments = split_user_input
-        .map(ToOwned::to_owned)
-        .collect::<Vec<String>>();
+    let (command_input, arguments) = parse_input(user_input);
     let command = BuiltinCommand::from((command_input, arguments));
 
     Ok(command)
@@ -94,4 +90,84 @@ pub fn find_executable_file(name: &str, paths: &[PathBuf]) -> Option<DirEntry> {
     }
 
     None
+}
+
+enum ProcessArgumentsState {
+    Command,
+    InsideSingleQuotes,
+    InsideDoubleQuotes,
+    NotInQuotes,
+}
+
+impl ProcessArgumentsState {
+    pub fn inside_quotes(&self) -> bool {
+        matches!(self, Self::InsideSingleQuotes) || matches!(self, Self::InsideDoubleQuotes)
+    }
+}
+/**
+* Examples:
+* input: 'hello      world'
+* output: ["'hello      world'"]
+
+*input: hello     world
+* output: ["hello", "world"]
+*/
+fn parse_input(input: String) -> (String, Vec<String>) {
+    let mut result = vec![];
+    let mut current_argument = String::new();
+    let mut state = ProcessArgumentsState::Command;
+    let mut command_input = String::new();
+
+    for argument_char in input.trim().chars() {
+        if matches!(state, ProcessArgumentsState::Command) {
+            if argument_char.is_whitespace() {
+                state = ProcessArgumentsState::NotInQuotes;
+                continue;
+            } else {
+                command_input.push(argument_char);
+                continue;
+            }
+        }
+
+        match argument_char {
+            '\'' => {
+                if matches!(state, ProcessArgumentsState::InsideSingleQuotes) {
+                    current_argument.push(argument_char);
+                    result.push(current_argument.clone());
+                    current_argument.clear();
+                    state = ProcessArgumentsState::NotInQuotes;
+                } else {
+                    if matches!(state, ProcessArgumentsState::InsideDoubleQuotes) {
+                        current_argument.push(argument_char);
+                    } else {
+                        current_argument.push(argument_char);
+                        state = ProcessArgumentsState::InsideSingleQuotes;
+                    }
+                }
+            }
+            '~' => {
+                if matches!(state, ProcessArgumentsState::InsideSingleQuotes) {
+                    current_argument.push(argument_char);
+                } else {
+                    let home_directory = std::env::home_dir().unwrap_or_default();
+                    current_argument.push_str(home_directory.to_str().unwrap_or_default());
+                }
+            }
+            ' ' => {
+                if state.inside_quotes() {
+                    current_argument.push(argument_char);
+                } else if !current_argument.is_empty() {
+                    result.push(current_argument.clone());
+                    current_argument.clear();
+                }
+            }
+            _ => current_argument.push(argument_char),
+        }
+    }
+
+    if !current_argument.is_empty() {
+        result.push(current_argument);
+    }
+
+    (command_input, result)
 }
