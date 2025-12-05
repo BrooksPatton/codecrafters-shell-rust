@@ -1,4 +1,5 @@
 pub mod builtin_type;
+pub mod change_directory;
 pub mod echo;
 pub mod pwd;
 pub mod run_external_executable;
@@ -6,6 +7,7 @@ pub mod run_external_executable;
 pub type CommandArguments = Vec<String>;
 
 pub enum BuiltinCommand {
+    ChangeDirectory(CommandArguments),
     Echo(CommandArguments),
     Exit,
     PWD,
@@ -16,6 +18,7 @@ pub enum BuiltinCommand {
 impl From<(String, CommandArguments)> for BuiltinCommand {
     fn from((command, arguments): (String, CommandArguments)) -> Self {
         match command.as_str() {
+            "cd" => Self::ChangeDirectory(arguments),
             "echo" => Self::Echo(arguments),
             "exit" => Self::Exit,
             "pwd" => Self::PWD,

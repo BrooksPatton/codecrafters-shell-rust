@@ -1,9 +1,11 @@
-use std::path::Path;
-
 use crate::builtin_commands::echo::echo;
+use anyhow::{Context, Result};
 
-pub fn pwd(path: &Path) {
+pub fn pwd() -> Result<()> {
+    let path = std::env::current_dir().context("Getting current directory")?;
     let stringified_path = path.as_os_str().to_str().unwrap_or_default();
 
     echo(&[stringified_path]);
+
+    Ok(())
 }
