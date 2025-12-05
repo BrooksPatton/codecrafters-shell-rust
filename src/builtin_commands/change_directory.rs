@@ -4,6 +4,8 @@ use std::{
     path::Path,
 };
 
+use crate::utilities::print_error;
+
 pub fn change_directory(arguments: &[String]) -> Result<()> {
     let Some(target_path) = arguments.first() else {
         let Some(home_directory) = home_dir() else {
@@ -18,6 +20,11 @@ pub fn change_directory(arguments: &[String]) -> Result<()> {
 
     if target_path.is_dir() {
         set_current_dir(target_path).context("Changing to target directory")?;
+    } else {
+        print_error(format!(
+            "cd: {}: No such file or directory",
+            target_path.to_str().unwrap_or_default()
+        ));
     }
 
     Ok(())
