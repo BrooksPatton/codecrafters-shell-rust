@@ -123,14 +123,29 @@ impl ProcessArgumentsState {
     pub fn inside_quotes(&self) -> bool {
         matches!(self, Self::InsideSingleQuotes) || matches!(self, Self::InsideDoubleQuotes)
     }
+
+    pub fn can_escape(&self) -> bool {
+        match self {
+            Self::InsideSingleQuotes => false,
+            Self::InsideDoubleQuotes => true,
+            Self::NotInQuotes => true,
+        }
+    }
 }
 
 fn parse_arguments(input: String) -> Vec<String> {
     let mut result = vec![];
     let mut current_argument = String::new();
     let mut state = ProcessArgumentsState::NotInQuotes;
+    let mut escaping = false;
 
     for argument_char in input.trim().chars() {
+        if escaping {
+            current_argument.push(argument_char);
+            escaping = false;
+            continue;
+        }
+
         match argument_char {
             '\'' => {
                 if matches!(state, ProcessArgumentsState::InsideSingleQuotes) {
@@ -166,6 +181,13 @@ fn parse_arguments(input: String) -> Vec<String> {
                 } else if !current_argument.is_empty() {
                     result.push(current_argument.clone());
                     current_argument.clear();
+                }
+            }
+            '\\' => {
+                if state.can_escape() {
+                    escaping = true;
+                } else {
+                    current_argument.push(argument_char);
                 }
             }
             _ => current_argument.push(argument_char),
