@@ -173,7 +173,10 @@ fn parse_arguments(input: String) -> Vec<String> {
                 }
             }
             ' ' => {
-                if state.inside_quotes() {
+                if matches!(state, ProcessArgumentsState::Escaping) {
+                    current_argument.push(argument_char);
+                    state = ProcessArgumentsState::Normal;
+                } else if state.inside_quotes() {
                     current_argument.push(argument_char);
                 } else if !current_argument.is_empty() {
                     result.push(current_argument.clone());
