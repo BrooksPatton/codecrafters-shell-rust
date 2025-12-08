@@ -1,3 +1,4 @@
+pub mod argument_parser;
 mod builtin_commands;
 mod errors;
 pub mod utilities;
