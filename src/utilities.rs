@@ -133,6 +133,12 @@ fn parse_arguments(input: String) -> Vec<String> {
     let mut state = ProcessArgumentsState::Normal;
 
     for argument_char in input.trim().chars() {
+        if matches!(state, ProcessArgumentsState::Escaping) {
+            current_argument.push(argument_char);
+            state = ProcessArgumentsState::Normal;
+            continue;
+        }
+
         match argument_char {
             '\'' => {
                 if matches!(state, ProcessArgumentsState::InsideSingleQuotes) {
