@@ -127,7 +127,7 @@ impl ProcessArgumentsState {
     pub fn can_escape(&self) -> bool {
         match self {
             Self::InsideSingleQuotes => false,
-            Self::InsideDoubleQuotes => true,
+            Self::InsideDoubleQuotes => false,
             Self::NotInQuotes => true,
         }
     }
