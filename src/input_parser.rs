@@ -1,4 +1,4 @@
-enum ProcessArgumentsState {
+enum ProcessInputState {
     Escaping,
     InsideSingleQuotes,
     InsideDoubleQuotes,
@@ -6,7 +6,7 @@ enum ProcessArgumentsState {
     Normal,
 }
 
-impl ProcessArgumentsState {
+impl ProcessInputState {
     pub fn inside_quotes(&self) -> bool {
         matches!(self, Self::InsideSingleQuotes) || matches!(self, Self::InsideDoubleQuotes)
     }
@@ -32,13 +32,13 @@ impl ProcessArgumentsState {
     }
 }
 
-pub fn parse_arguments(input: String) -> Vec<String> {
+pub fn parse_input(input: String) -> Vec<String> {
     let mut result = vec![];
     let mut current_argument = String::new();
-    let mut state = ProcessArgumentsState::Normal;
+    let mut state = ProcessInputState::Normal;
 
     for argument_char in input.trim().chars() {
-        if matches!(state, ProcessArgumentsState::Escaping) {
+        if matches!(state, ProcessInputState::Escaping) {
             current_argument.push(argument_char);
             state.to_normal();
             continue;
@@ -46,28 +46,28 @@ pub fn parse_arguments(input: String) -> Vec<String> {
 
         match argument_char {
             '\'' => match state {
-                ProcessArgumentsState::InsideSingleQuotes => state.to_normal(),
-                ProcessArgumentsState::InsideDoubleQuotes => current_argument.push(argument_char),
-                ProcessArgumentsState::InsideDoubleQuotesEscaping => {
+                ProcessInputState::InsideSingleQuotes => state.to_normal(),
+                ProcessInputState::InsideDoubleQuotes => current_argument.push(argument_char),
+                ProcessInputState::InsideDoubleQuotesEscaping => {
                     current_argument.push('\\');
                     current_argument.push(argument_char);
                     state.to_double_quoting();
                 }
-                ProcessArgumentsState::Normal => state.to_single_quoting(),
+                ProcessInputState::Normal => state.to_single_quoting(),
                 _ => (),
             },
             '"' => match state {
-                ProcessArgumentsState::InsideSingleQuotes => current_argument.push(argument_char),
-                ProcessArgumentsState::InsideDoubleQuotes => state.to_normal(),
-                ProcessArgumentsState::InsideDoubleQuotesEscaping => {
+                ProcessInputState::InsideSingleQuotes => current_argument.push(argument_char),
+                ProcessInputState::InsideDoubleQuotes => state.to_normal(),
+                ProcessInputState::InsideDoubleQuotesEscaping => {
                     current_argument.push(argument_char);
                     state.to_double_quoting();
                 }
-                ProcessArgumentsState::Normal => state.to_double_quoting(),
+                ProcessInputState::Normal => state.to_double_quoting(),
                 _ => (),
             },
             '~' => {
-                if matches!(state, ProcessArgumentsState::InsideSingleQuotes) {
+                if matches!(state, ProcessInputState::InsideSingleQuotes) {
                     current_argument.push(argument_char);
                 } else {
                     let home_directory = std::env::home_dir().unwrap_or_default();
@@ -83,17 +83,17 @@ pub fn parse_arguments(input: String) -> Vec<String> {
                 }
             }
             '\\' => match state {
-                ProcessArgumentsState::InsideSingleQuotes => current_argument.push(argument_char),
-                ProcessArgumentsState::InsideDoubleQuotes => state.to_double_quote_escaping(),
-                ProcessArgumentsState::InsideDoubleQuotesEscaping => {
+                ProcessInputState::InsideSingleQuotes => current_argument.push(argument_char),
+                ProcessInputState::InsideDoubleQuotes => state.to_double_quote_escaping(),
+                ProcessInputState::InsideDoubleQuotesEscaping => {
                     current_argument.push(argument_char);
                     state.to_double_quoting();
                 }
-                ProcessArgumentsState::Normal => state.to_escaping(),
+                ProcessInputState::Normal => state.to_escaping(),
                 _ => (),
             },
             _ => {
-                if matches!(state, ProcessArgumentsState::InsideDoubleQuotesEscaping) {
+                if matches!(state, ProcessInputState::InsideDoubleQuotesEscaping) {
                     state.to_double_quoting();
                     current_argument.push('\\');
                 }

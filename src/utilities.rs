@@ -1,4 +1,4 @@
-use crate::{argument_parser::parse_arguments, builtin_commands::BuiltinCommand};
+use crate::{builtin_commands::BuiltinCommand, command::Command, input_parser::parse_input};
 use anyhow::{Context, Result, bail};
 pub use std::process::exit;
 use std::{
@@ -27,11 +27,9 @@ pub fn print_prompt() {
     io::stdout().flush().unwrap();
 }
 
-pub fn get_command() -> Result<BuiltinCommand> {
+pub fn get_command() -> Result<Command> {
     let user_input = get_user_input()?;
-    let mut arguments = parse_arguments(user_input);
-    let command_input = arguments.remove(0);
-    let command = BuiltinCommand::from((command_input, arguments));
+    let command = Command::new(user_input);
 
     Ok(command)
 }

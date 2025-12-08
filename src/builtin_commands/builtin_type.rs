@@ -1,10 +1,10 @@
 use crate::{
-    builtin_commands::{BuiltinCommand, CommandArguments, echo::echo},
+    builtin_commands::{BuiltinCommand, echo::echo},
     utilities::find_executable_file,
 };
-use std::path::PathBuf;
+use std::{path::PathBuf, sync::mpsc::Sender};
 
-pub fn builtin_type(arguments: CommandArguments, paths: &[PathBuf]) {
+pub fn builtin_type(arguments: Vec<String>, paths: &[PathBuf], output: &mut Sender<String>) {
     let type_input = arguments.first().cloned().unwrap_or_default();
     let builtin_command = BuiltinCommand::from(type_input.clone());
     let mut message = vec![];
@@ -30,5 +30,5 @@ pub fn builtin_type(arguments: CommandArguments, paths: &[PathBuf]) {
     }
 
     let message = message.join("");
-    echo(&[&message]);
+    echo(&[&message], output);
 }
