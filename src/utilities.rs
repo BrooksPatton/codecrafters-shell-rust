@@ -153,6 +153,9 @@ fn parse_arguments(input: String) -> Vec<String> {
                 } else if matches!(state, ProcessArgumentsState::InsideDoubleQuotesEscaping) {
                     current_argument.push(argument_char);
                     state = ProcessArgumentsState::InsideDoubleQuotes;
+                } else if matches!(state, ProcessArgumentsState::Escaping) {
+                    current_argument.push(argument_char);
+                    state = ProcessArgumentsState::Normal;
                 } else {
                     state = ProcessArgumentsState::InsideDoubleQuotes;
                 }
