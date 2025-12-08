@@ -137,6 +137,10 @@ fn parse_arguments(input: String) -> Vec<String> {
             '\'' => {
                 if matches!(state, ProcessArgumentsState::InsideSingleQuotes) {
                     state = ProcessArgumentsState::Normal;
+                } else if matches!(state, ProcessArgumentsState::InsideDoubleQuotesEscaping) {
+                    current_argument.push('\\');
+                    current_argument.push(argument_char);
+                    state = ProcessArgumentsState::InsideDoubleQuotes;
                 } else {
                     if matches!(state, ProcessArgumentsState::InsideDoubleQuotes) {
                         current_argument.push(argument_char);
@@ -191,7 +195,13 @@ fn parse_arguments(input: String) -> Vec<String> {
                 }
                 ProcessArgumentsState::Normal => state = ProcessArgumentsState::Escaping,
             },
-            _ => current_argument.push(argument_char),
+            _ => {
+                if matches!(state, ProcessArgumentsState::InsideDoubleQuotesEscaping) {
+                    state = ProcessArgumentsState::InsideDoubleQuotes;
+                    current_argument.push('\\');
+                }
+                current_argument.push(argument_char);
+            }
         }
     }
 
