@@ -6,7 +6,7 @@ use std::{
     fs::DirEntry,
     io::{self, Write, stdin},
     os::unix::fs::MetadataExt,
-    path::PathBuf,
+    path::{Path, PathBuf},
 };
 
 pub fn get_user_input() -> Result<String> {
@@ -84,4 +84,15 @@ pub fn find_executable_file(name: &str, paths: &[PathBuf]) -> Option<DirEntry> {
     }
 
     None
+}
+
+pub fn write_all_to_file(messages: &[String], filename: &str) -> Result<()> {
+    let file_path = Path::new(filename);
+    let mut file = std::fs::File::create(file_path)?;
+
+    messages
+        .iter()
+        .try_for_each(|message| file.write_all(message.as_bytes()))?;
+
+    Ok(())
 }

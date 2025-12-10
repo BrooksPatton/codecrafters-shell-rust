@@ -4,15 +4,13 @@ mod errors;
 pub mod input_parser;
 pub mod utilities;
 
-use std::{io::Write, path::Path};
-
 use crate::{
     builtin_commands::{
         BuiltinCommand, builtin_type::builtin_type, change_directory::change_directory, echo::echo,
         pwd::pwd, run_external_executable::run_external_executable,
     },
     errors::CustomError,
-    utilities::{find_executable_file, get_command, get_path, print_prompt},
+    utilities::{find_executable_file, get_command, get_path, print_prompt, write_all_to_file},
 };
 use anyhow::{Context, Result};
 
@@ -53,20 +51,10 @@ pub fn run() -> Result<()> {
                 stdout
                     .iter()
                     .map(|message| message.trim())
-                    .for_each(|message| print!("{message}"));
-
-                if !stdout.is_empty() {
-                    println!("");
-                }
+                    .for_each(|message| println!("{message}"));
             }
             command::Output::File(input) => {
-                let file_path = Path::new(&input);
-                let mut file = std::fs::File::create(file_path)
-                    .context("Creating standard out file as we're redirecting")?;
-
-                stdout
-                    .iter()
-                    .try_for_each(|message| file.write_all(message.as_bytes()))?;
+                write_all_to_file(&stdout, &input).context("redirecting standard out to a file")?
             }
         }
 
@@ -75,13 +63,10 @@ pub fn run() -> Result<()> {
                 stderr
                     .iter()
                     .map(|message| message.trim())
-                    .for_each(|message| print!("{message}"));
-
-                if !stderr.is_empty() {
-                    println!("");
-                }
+                    .for_each(|message| eprintln!("{message}"));
             }
-            command::Output::File(_) => todo!(),
+            command::Output::File(input) => write_all_to_file(&stderr, &input)
+                .context("redirecting standard error to a file")?,
         }
 
         stderr.clear();
