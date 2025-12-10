@@ -1,13 +1,13 @@
-use crate::{builtin_commands::BuiltinCommand, command::Command, input_parser::parse_input};
+use crate::command::Command;
 use anyhow::{Context, Result, bail};
 pub use std::process::exit;
 use std::{
     env::{self, split_paths},
-    fmt::Display,
     fs::DirEntry,
     io::{self, Write, stdin},
     os::unix::fs::MetadataExt,
     path::PathBuf,
+    sync::mpsc::Sender,
 };
 
 pub fn get_user_input() -> Result<String> {
@@ -18,18 +18,14 @@ pub fn get_user_input() -> Result<String> {
     Ok(user_input.trim().to_owned())
 }
 
-pub fn print_error(message: impl Display) {
-    eprintln!("{message}",);
-}
-
 pub fn print_prompt() {
     print!("$ ");
     io::stdout().flush().unwrap();
 }
 
-pub fn get_command() -> Result<Command> {
+pub fn get_command(standard_out: &mut Sender<String>) -> Result<Command> {
     let user_input = get_user_input()?;
-    let command = Command::new(user_input);
+    let command = Command::new(user_input, standard_out)?;
 
     Ok(command)
 }
