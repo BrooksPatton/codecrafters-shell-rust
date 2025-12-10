@@ -103,7 +103,10 @@ pub fn write_all_to_file(messages: &[String], filename: &str) -> Result<()> {
 
 pub fn append_all_to_file(messages: &[String], filename: &str) -> Result<()> {
     let file_path = Path::new(filename);
-    let mut file = std::fs::File::options().append(true).open(file_path)?;
+    let mut file = std::fs::File::options()
+        .create(true)
+        .append(true)
+        .open(file_path)?;
 
     file.write(b"\r\n")
         .context("writing new line to appended file")?;
