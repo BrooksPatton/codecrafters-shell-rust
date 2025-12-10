@@ -108,8 +108,8 @@ pub fn append_all_to_file(messages: &[String], filename: &str) -> Result<()> {
         .append(true)
         .open(file_path)?;
 
-    file.write(b"\r\n")
-        .context("writing new line to appended file")?;
+    // file.write(b"\r\n")
+    //     .context("writing new line to appended file")?;
 
     messages
         .iter()
