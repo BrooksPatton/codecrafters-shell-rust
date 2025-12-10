@@ -7,7 +7,6 @@ use std::{
     io::{self, Write, stdin},
     os::unix::fs::MetadataExt,
     path::PathBuf,
-    sync::mpsc::Sender,
 };
 
 pub fn get_user_input() -> Result<String> {
@@ -23,7 +22,7 @@ pub fn print_prompt() {
     io::stdout().flush().unwrap();
 }
 
-pub fn get_command(standard_out: &mut Sender<String>) -> Result<Command> {
+pub fn get_command(standard_out: &mut Vec<String>) -> Result<Command> {
     let user_input = get_user_input()?;
     let command = Command::new(user_input, standard_out)?;
 

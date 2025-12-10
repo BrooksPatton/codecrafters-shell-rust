@@ -2,10 +2,9 @@ use anyhow::{Context, Result, bail};
 use std::{
     env::{home_dir, set_current_dir},
     path::Path,
-    sync::mpsc::Sender,
 };
 
-pub fn change_directory(arguments: &[String], standard_error: &mut Sender<String>) -> Result<()> {
+pub fn change_directory(arguments: &[String], stderr: &mut Vec<String>) -> Result<()> {
     let Some(home_directory) = home_dir() else {
         bail!("Error: you don't seem to have a home directory");
     };
@@ -18,12 +17,10 @@ pub fn change_directory(arguments: &[String], standard_error: &mut Sender<String
     if target_path.is_dir() {
         set_current_dir(target_path).context("Changing to target directory")?;
     } else {
-        standard_error
-            .send(format!(
-                "cd: {}: No such file or directory",
-                target_path.to_str().unwrap_or_default()
-            ))
-            .context("Sending error for changing home directory")?;
+        stderr.push(format!(
+            "cd: {}: No such file or directory",
+            target_path.to_str().unwrap_or_default()
+        ));
     }
 
     Ok(())

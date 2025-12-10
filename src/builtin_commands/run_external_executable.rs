@@ -1,12 +1,11 @@
-use std::{fs::DirEntry, sync::mpsc::Sender};
-
 use anyhow::{Context, Result};
+use std::fs::DirEntry;
 
 pub fn run_external_executable(
     executable: DirEntry,
     arguments: &[String],
-    stdout: &mut Sender<String>,
-    stderr: &mut Sender<String>,
+    stdout: &mut Vec<String>,
+    stderr: &mut Vec<String>,
 ) -> Result<()> {
     let name = executable.file_name();
     let name = name.to_str().unwrap();
@@ -18,18 +17,19 @@ pub fn run_external_executable(
         .output()
         .context("getting command result from external command")?;
 
-    stdout
-        .send(
+    if !command_result.stdout.is_empty() {
+        stdout.push(
             String::from_utf8(command_result.stdout)
                 .context("Converting external command standard out to String")?,
-        )
-        .context("Sending external command standard out to Standard out channel")?;
-    stderr
-        .send(
+        );
+    }
+
+    if !command_result.stderr.is_empty() {
+        stderr.push(
             String::from_utf8(command_result.stderr)
                 .context("Converting external command standard error to String")?,
-        )
-        .context("Sending external command standard error to Standard out channel")?;
+        );
+    }
 
     Ok(())
 }

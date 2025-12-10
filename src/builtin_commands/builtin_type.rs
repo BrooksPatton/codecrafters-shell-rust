@@ -4,13 +4,13 @@ use crate::{
     builtin_commands::{BuiltinCommand, echo::echo},
     utilities::find_executable_file,
 };
-use std::{path::PathBuf, sync::mpsc::Sender};
+use std::path::PathBuf;
 
 pub fn builtin_type(
     arguments: Vec<String>,
     paths: &[PathBuf],
-    stdout: &mut Sender<String>,
-    stderr: &mut Sender<String>,
+    stdout: &mut Vec<String>,
+    stderr: &mut Vec<String>,
 ) -> Result<()> {
     let type_input = arguments.first().cloned().unwrap_or_default();
     let builtin_command = BuiltinCommand::from(type_input.clone());

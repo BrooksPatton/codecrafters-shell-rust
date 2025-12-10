@@ -1,6 +1,4 @@
-use std::sync::mpsc::Sender;
-
-use anyhow::{Context, Result};
+use anyhow::Result;
 
 use crate::{builtin_commands::BuiltinCommand, input_parser::parse_input};
 
@@ -12,11 +10,10 @@ pub struct Command {
 }
 
 impl Command {
-    pub fn new(user_input: String, standard_error_output: &mut Sender<String>) -> Result<Self> {
+    pub fn new(user_input: String, stderr_collector: &mut Vec<String>) -> Result<Self> {
         let mut parsed_input = parse_input(user_input);
         let command_input = parsed_input.remove(0);
-        let (arguments, standard_out) =
-            Self::extract_redirect(parsed_input, standard_error_output)?;
+        let (arguments, standard_out) = Self::extract_redirect(parsed_input, stderr_collector)?;
         let builtin_command = BuiltinCommand::from((command_input, arguments.clone()));
         let standard_error = Output::Standard;
 
@@ -29,7 +26,7 @@ impl Command {
 
     fn extract_redirect(
         input: Vec<String>,
-        standard_error: &mut Sender<String>,
+        stderr: &mut Vec<String>,
     ) -> Result<(Vec<String>, Output)> {
         let mut arguments = vec![];
         let mut arguments_iter = input.into_iter();
@@ -39,9 +36,8 @@ impl Command {
             match argument.as_str() {
                 "1>" | ">" => {
                     let Some(next_argument) = arguments_iter.next() else {
-                        standard_error
-                            .send("When redirecting standard out, a file must be given".to_owned())
-                            .context("Sending error to standard error channel")?;
+                        stderr
+                            .push("When redirecting standard out, a file must be given".to_owned());
                         break;
                     };
                     output = Output::File(next_argument);

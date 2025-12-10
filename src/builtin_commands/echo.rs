@@ -1,33 +1,29 @@
-use std::{fmt::Display, io::Write, sync::mpsc::Sender};
+use std::{fmt::Display, io::Write};
 
 use anyhow::{Context, Result};
 
 pub fn echo(
     user_input: &[impl Display],
-    output: &mut Sender<String>,
-    standard_error: &mut Sender<String>,
+    stdout: &mut Vec<String>,
+    stderr: &mut Vec<String>,
 ) -> Result<()> {
     let mut inputs = user_input.iter();
     let mut buffer = vec![];
     if let Some(input) = inputs.next() {
         // print!("{input}");
         if let Err(error) = write!(&mut buffer, "{input}") {
-            standard_error
-                .send(format!("{error}"))
-                .context("error sending message to stantard error.")?;
+            stderr.push(format!("{error}"));
         };
     }
 
     for input in inputs {
         // print!(" {input}");
         if let Err(error) = write!(buffer, " {input}") {
-            standard_error
-                .send(format!("{error}"))
-                .context("error sending message to standard error")?;
+            stderr.push(format!("{error}"));
         };
     }
 
-    output.send(String::from_utf8(buffer).unwrap()).unwrap();
+    stdout.push(String::from_utf8(buffer).context("Converting input from buffer to String")?);
 
     Ok(())
 }
