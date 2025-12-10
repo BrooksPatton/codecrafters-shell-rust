@@ -1,20 +1,29 @@
 use crate::command::Command;
 use anyhow::{Context, Result, bail};
+use rustyline::DefaultEditor;
 pub use std::process::exit;
 use std::{
     env::{self, split_paths},
     fs::DirEntry,
-    io::{self, Write, stdin},
+    io::{self, BufRead, Write, stdin},
     os::unix::fs::MetadataExt,
     path::{Path, PathBuf},
 };
 
 pub fn get_user_input() -> Result<String> {
-    let mut user_input = String::new();
-    stdin()
-        .read_line(&mut user_input)
-        .context("reading user input")?;
-    Ok(user_input.trim().to_owned())
+    let mut rl = DefaultEditor::new()?;
+
+    loop {
+        let input = rl.readline("$$$$$ ")?;
+        rl.clear_screen
+        println!("readline gives me: '{input}'");
+    }
+    let mut user_input = vec![];
+    let mut input_stream = stdin().lock();
+    input_stream.read_until(b"\t"[0], &mut user_input)?;
+
+    println!("{}", String::from_utf8(user_input).unwrap());
+    todo!()
 }
 
 pub fn print_prompt() {
