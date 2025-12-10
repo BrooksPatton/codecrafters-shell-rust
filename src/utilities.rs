@@ -88,7 +88,11 @@ pub fn find_executable_file(name: &str, paths: &[PathBuf]) -> Option<DirEntry> {
 
 pub fn write_all_to_file(messages: &[String], filename: &str) -> Result<()> {
     let file_path = Path::new(filename);
-    let mut file = std::fs::File::create(file_path)?;
+    let mut file = std::fs::File::options()
+        .write(true)
+        .truncate(true)
+        .create(true)
+        .open(file_path)?;
 
     messages
         .iter()
