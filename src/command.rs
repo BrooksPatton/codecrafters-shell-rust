@@ -41,7 +41,15 @@ impl Command {
                             .push("When redirecting standard out, a file must be given".to_owned());
                         break;
                     };
-                    standard_out_output = Output::File(next_argument);
+                    standard_out_output = Output::CreateFile(next_argument);
+                }
+                "1>>" | ">>" => {
+                    let Some(next_argument) = arguments_iter.next() else {
+                        stderr
+                            .push("When redirecting standard out, a file must be given".to_owned());
+                        break;
+                    };
+                    standard_out_output = Output::AppendFile(next_argument);
                 }
                 "2>" => {
                     let Some(next_argument) = arguments_iter.next() else {
@@ -49,7 +57,15 @@ impl Command {
                         break;
                     };
 
-                    standard_error_output = Output::File(next_argument);
+                    standard_error_output = Output::CreateFile(next_argument);
+                }
+                "2>>" => {
+                    let Some(next_argument) = arguments_iter.next() else {
+                        stderr.push("When redirecting standard error to a file, you must provide a file name".to_owned());
+                        break;
+                    };
+
+                    standard_error_output = Output::AppendFile(next_argument);
                 }
                 _ => arguments.push(argument),
             }
@@ -62,5 +78,6 @@ impl Command {
 #[derive(Debug)]
 pub enum Output {
     Standard,
-    File(String),
+    CreateFile(String),
+    AppendFile(String),
 }

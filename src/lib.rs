@@ -10,7 +10,10 @@ use crate::{
         pwd::pwd, run_external_executable::run_external_executable,
     },
     errors::CustomError,
-    utilities::{find_executable_file, get_command, get_path, print_prompt, write_all_to_file},
+    utilities::{
+        append_all_to_file, find_executable_file, get_command, get_path, print_prompt,
+        write_all_to_file,
+    },
 };
 use anyhow::{Context, Result};
 
@@ -53,9 +56,11 @@ pub fn run() -> Result<()> {
                     .map(|message| message.trim())
                     .for_each(|message| println!("{message}"));
             }
-            command::Output::File(input) => {
+            command::Output::CreateFile(input) => {
                 write_all_to_file(&stdout, &input).context("redirecting standard out to a file")?
             }
+            command::Output::AppendFile(input) => append_all_to_file(&stdout, &input)
+                .context("Error appending standard out to a file.")?,
         }
 
         match command.standard_error {
@@ -65,8 +70,10 @@ pub fn run() -> Result<()> {
                     .map(|message| message.trim())
                     .for_each(|message| eprintln!("{message}"));
             }
-            command::Output::File(input) => write_all_to_file(&stderr, &input)
+            command::Output::CreateFile(input) => write_all_to_file(&stderr, &input)
                 .context("redirecting standard error to a file")?,
+            command::Output::AppendFile(input) => append_all_to_file(&stderr, &input)
+                .context("Error appending standard error to a file.")?,
         }
 
         stderr.clear();

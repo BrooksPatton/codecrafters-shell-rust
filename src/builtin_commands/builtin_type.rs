@@ -15,6 +15,7 @@ pub fn builtin_type(
     let type_input = arguments.first().cloned().unwrap_or_default();
     let builtin_command = BuiltinCommand::from(type_input.clone());
     let mut message = vec![];
+    let mut is_error = false;
 
     message.push(type_input.clone());
 
@@ -31,6 +32,7 @@ pub fn builtin_type(
             message.push(path);
         } else {
             message.push(": not found".to_owned());
+            is_error = true;
         };
     } else {
         message.push(" is a shell builtin".to_owned());
@@ -38,7 +40,11 @@ pub fn builtin_type(
 
     let message = message.join("");
 
-    echo(&[&message], stdout, stderr)?;
+    if is_error {
+        stderr.push(message);
+    } else {
+        stdout.push(message);
+    }
 
     Ok(())
 }
