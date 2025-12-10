@@ -1,9 +1,6 @@
 use anyhow::Result;
 
-use crate::{
-    builtin_commands::{BuiltinCommand, echo::echo},
-    utilities::find_executable_file,
-};
+use crate::{builtin_commands::BuiltinCommand, utilities::find_executable_file};
 use std::path::PathBuf;
 
 pub fn builtin_type(
