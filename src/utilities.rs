@@ -258,5 +258,9 @@ pub fn common_prefix_count(prefix: &str, word: &str) -> usize {
 }
 
 pub fn all_matching_commands_lcp_the_same(matching_commands: &[(String, usize)]) -> bool {
+    if matching_commands.len() == 1 {
+        return false;
+    }
+
     matching_commands[0].1 == matching_commands[matching_commands.len() - 1].1
 }
