@@ -68,9 +68,9 @@ pub fn get_user_input(term: &mut Term) -> Result<String> {
                     matching_command_index = 0;
                 }
 
-                if !matching_commands.is_empty()
-                    && all_matching_commands_lcp_the_same(&matching_commands)
-                {
+                if matching_commands.is_empty() {
+                    print!("{BELL}");
+                } else if all_matching_commands_lcp_the_same(&matching_commands) {
                     if in_bell_state {
                         print!("\n");
                         let mut commands = matching_commands
