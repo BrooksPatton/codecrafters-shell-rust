@@ -73,10 +73,13 @@ pub fn get_user_input(term: &mut Term) -> Result<String> {
                 {
                     if in_bell_state {
                         print!("\n");
-                        let commands = matching_commands
+                        let mut commands = matching_commands
                             .iter()
                             .map(|command| command.0.as_str())
                             .collect::<Vec<&str>>();
+
+                        commands.sort();
+
                         println!("{}", commands.join("  "));
                         print_prompt();
                         print!("{current_input}");
