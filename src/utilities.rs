@@ -16,6 +16,7 @@ pub fn get_user_input(term: &mut Term) -> Result<String> {
     let mut current_input = String::new();
     let mut matching_commands = vec![];
     let mut matching_command_index = 0;
+    let mut in_bell_state = false;
 
     loop {
         let key = term
@@ -70,7 +71,20 @@ pub fn get_user_input(term: &mut Term) -> Result<String> {
                 if !matching_commands.is_empty()
                     && all_matching_commands_lcp_the_same(&matching_commands)
                 {
-                    print!("{BELL}");
+                    if in_bell_state {
+                        print!("\n");
+                        let commands = matching_commands
+                            .iter()
+                            .map(|command| command.0.as_str())
+                            .collect::<Vec<&str>>();
+                        println!("{}", commands.join("  "));
+                        print_prompt();
+                        print!("{current_input}");
+                        in_bell_state = false;
+                    } else {
+                        print!("{BELL}");
+                        in_bell_state = true;
+                    }
                 } else {
                     term.clear_line()?;
                     print_prompt();
