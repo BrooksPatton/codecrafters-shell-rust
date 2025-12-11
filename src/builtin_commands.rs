@@ -14,6 +14,18 @@ pub enum BuiltinCommand {
     NotFound(String, Vec<String>),
 }
 
+impl BuiltinCommand {
+    pub fn matches(partial: &str) -> Vec<String> {
+        let possible_matches = ["cd", "echo", "exit", "pwd", "type"];
+
+        possible_matches
+            .iter()
+            .filter(|command| command.contains(partial))
+            .map(ToString::to_string)
+            .collect()
+    }
+}
+
 impl From<(String, Vec<String>)> for BuiltinCommand {
     fn from((command, arguments): (String, Vec<String>)) -> Self {
         match command.as_str() {

@@ -11,7 +11,7 @@ use crate::{
     },
     errors::CustomError,
     utilities::{
-        append_all_to_file, find_executable_file, get_command, get_path, print_prompt,
+        append_all_to_file, find_executable_files, get_command, get_path, print_prompt,
         write_all_to_file,
     },
 };
@@ -21,11 +21,12 @@ pub fn run() -> Result<()> {
     let path = get_path().context("Getting path")?;
     let mut stdout: Vec<String> = vec![];
     let mut stderr: Vec<String> = vec![];
+    let mut term = console::Term::stdout();
 
     loop {
         print_prompt();
 
-        let command = get_command(&mut stderr).context("getting command")?;
+        let command = get_command(&mut stderr, &mut term).context("getting command")?;
 
         match command.builtin_command {
             BuiltinCommand::ChangeDirectory(arguments) => {
@@ -40,7 +41,9 @@ pub fn run() -> Result<()> {
                 builtin_type(arguments, &path, &mut stdout, &mut stderr)?;
             }
             BuiltinCommand::NotFound(command_string, arguments) => {
-                if let Some(executable) = find_executable_file(&command_string, &path) {
+                if let Some(executable) =
+                    find_executable_files(&command_string, &path, false)?.first()
+                {
                     run_external_executable(executable, &arguments, &mut stdout, &mut stderr)?;
                 } else {
                     let error = CustomError::CommandNotFound(command_string);

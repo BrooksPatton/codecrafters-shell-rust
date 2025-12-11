@@ -1,6 +1,6 @@
 use anyhow::Result;
 
-use crate::{builtin_commands::BuiltinCommand, utilities::find_executable_file};
+use crate::{builtin_commands::BuiltinCommand, utilities::find_executable_files};
 use std::path::PathBuf;
 
 pub fn builtin_type(
@@ -18,7 +18,8 @@ pub fn builtin_type(
 
     if matches!(builtin_command, BuiltinCommand::NotFound(_, _)) {
         // search the path to see if we can find an executable
-        if let Some(dir_entry) = find_executable_file(&type_input, paths) {
+        let dir_entries = find_executable_files(&type_input, paths, false)?;
+        if let Some(dir_entry) = dir_entries.first() {
             let path_buf = dir_entry.path();
             let path = path_buf
                 .into_os_string()

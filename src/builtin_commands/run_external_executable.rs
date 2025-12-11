@@ -2,7 +2,7 @@ use anyhow::{Context, Result};
 use std::fs::DirEntry;
 
 pub fn run_external_executable(
-    executable: DirEntry,
+    executable: &DirEntry,
     arguments: &[String],
     stdout: &mut Vec<String>,
     stderr: &mut Vec<String>,
