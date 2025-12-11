@@ -10,9 +10,12 @@ use std::{
     path::{Path, PathBuf},
 };
 
+const BELL: &str = "\x07";
+
 pub fn get_user_input(term: &mut Term) -> Result<String> {
     let mut current_input = String::new();
-    let mut tab_error = false;
+    let mut matching_commands = vec![];
+    let mut matching_command_index = 0;
 
     loop {
         let key = term
@@ -37,31 +40,47 @@ pub fn get_user_input(term: &mut Term) -> Result<String> {
             console::Key::Home => todo!(),
             console::Key::End => todo!(),
             console::Key::Tab => {
-                if let Some(command) = find_matching_command(&current_input)? {
-                    current_input = command;
-                    current_input.push(' ');
+                if matching_commands.is_empty() {
+                    let path = get_path()?;
+                    let mut possible_matching_builtins = BuiltinCommand::matches(&current_input);
+                    let possible_matching_commands =
+                        find_executable_files(&current_input, &path, true)?;
+                    let mut combined_matching_commands = possible_matching_commands
+                        .into_iter()
+                        .filter_map(|dir_entry| dir_entry.file_name().into_string().ok())
+                        .collect::<Vec<String>>();
+
+                    combined_matching_commands.append(&mut possible_matching_builtins);
+
+                    let mut matching_commands_with_lcp = combined_matching_commands
+                        .into_iter()
+                        .map(|command_name| {
+                            let prefix_count = common_prefix_count(&current_input, &command_name);
+
+                            (command_name, prefix_count)
+                        })
+                        .collect::<Vec<(String, u8)>>();
+
+                    matching_commands_with_lcp.sort_by(|a, b| a.1.cmp(&b.1));
+
+                    matching_commands = matching_commands_with_lcp;
+                    matching_command_index = 0;
+                }
+
+                if matching_commands.is_empty() {
+                    print!("{BELL}");
+                } else {
                     term.clear_line()?;
                     print_prompt();
-                    print!("{current_input}");
-                    tab_error = false;
-                } else if !tab_error {
-                    print!("\x07");
-                    tab_error = true;
-                } else if tab_error {
-                    print!("\n");
-                    let mut possible_commands =
-                        find_executable_files(&current_input, &get_path()?, true)?
-                            .into_iter()
-                            .filter_map(|dir_entry| dir_entry.file_name().into_string().ok())
-                            .collect::<Vec<String>>();
+                    print!("{}", matching_commands[matching_command_index].0);
+                    matching_command_index =
+                        if matching_command_index + 1 == matching_commands.len() {
+                            0
+                        } else {
+                            matching_command_index + 1
+                        };
 
-                    possible_commands.sort();
-
-                    println!("{}", possible_commands.join("  "));
-                    print_prompt();
-                    print!("{current_input}");
-
-                    tab_error = false;
+                    current_input = matching_commands[matching_command_index].0.clone();
                 }
             }
             console::Key::BackTab => todo!(),
@@ -73,6 +92,7 @@ pub fn get_user_input(term: &mut Term) -> Result<String> {
             console::Key::Char(input_char) => {
                 current_input.push(input_char);
                 print!("{input_char}");
+                matching_commands.clear();
             }
             _ => todo!(),
         }
@@ -126,7 +146,7 @@ pub fn find_files(name: &str, paths: &[PathBuf], partial_match: bool) -> Vec<Dir
             if partial_match {
                 if file_name
                     .to_str()
-                    .is_some_and(|filename| filename.contains(name))
+                    .is_some_and(|filename| filename.starts_with(name))
                 {
                     found_entries.push(entry);
                 }
@@ -220,4 +240,19 @@ pub fn find_matching_command(partial: &str) -> Result<Option<String>> {
             None
         }
     })
+}
+
+pub fn common_prefix_count(prefix: &str, word: &str) -> u8 {
+    let mut count = 0;
+
+    for (index, word_char) in word.chars().enumerate() {
+        let Some(prefix_char) = prefix.get(index..index + 1) else {
+            break;
+        };
+        if prefix_char == word_char.to_string() {
+            count += 1;
+        }
+    }
+
+    count
 }
