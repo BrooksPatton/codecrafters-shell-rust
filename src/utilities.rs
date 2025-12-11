@@ -59,7 +59,7 @@ pub fn get_user_input(term: &mut Term) -> Result<String> {
 
                             (command_name, prefix_count)
                         })
-                        .collect::<Vec<(String, u8)>>();
+                        .collect::<Vec<(String, usize)>>();
 
                     matching_commands_with_lcp.sort_by(|a, b| a.1.cmp(&b.1));
 
@@ -71,6 +71,7 @@ pub fn get_user_input(term: &mut Term) -> Result<String> {
                     print!("{BELL}");
                 } else {
                     term.clear_line()?;
+                    println!("{matching_commands:?}");
                     print_prompt();
                     print!("{}", matching_commands[matching_command_index].0);
                     matching_command_index =
@@ -242,17 +243,9 @@ pub fn find_matching_command(partial: &str) -> Result<Option<String>> {
     })
 }
 
-pub fn common_prefix_count(prefix: &str, word: &str) -> u8 {
-    let mut count = 0;
-
-    for (index, word_char) in word.chars().enumerate() {
-        let Some(prefix_char) = prefix.get(index..index + 1) else {
-            break;
-        };
-        if prefix_char == word_char.to_string() {
-            count += 1;
-        }
-    }
-
-    count
+/// This assumes that the word shares a common prefix with the prefix.
+///
+/// We return the number of remaining letters in the word after the prefix is removed
+pub fn common_prefix_count(prefix: &str, word: &str) -> usize {
+    word.get(prefix.len()..).unwrap_or_default().len()
 }
