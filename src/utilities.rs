@@ -93,6 +93,7 @@ pub fn get_user_input(term: &mut Term) -> Result<String> {
                 current_input.push(input_char);
                 print!("{input_char}");
                 matching_commands.clear();
+                matching_command_index = 0;
             }
             _ => todo!(),
         }
