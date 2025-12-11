@@ -67,7 +67,9 @@ pub fn get_user_input(term: &mut Term) -> Result<String> {
                     matching_command_index = 0;
                 }
 
-                if matching_commands.is_empty() {
+                if !matching_commands.is_empty()
+                    && all_matching_commands_lcp_the_same(&matching_commands)
+                {
                     print!("{BELL}");
                 } else {
                     term.clear_line()?;
@@ -253,4 +255,8 @@ pub fn find_matching_command(partial: &str) -> Result<Option<String>> {
 /// We return the number of remaining letters in the word after the prefix is removed
 pub fn common_prefix_count(prefix: &str, word: &str) -> usize {
     word.get(prefix.len()..).unwrap_or_default().len()
+}
+
+pub fn all_matching_commands_lcp_the_same(matching_commands: &[(String, usize)]) -> bool {
+    matching_commands[0].1 == matching_commands[matching_commands.len() - 1].1
 }
