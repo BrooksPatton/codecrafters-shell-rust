@@ -12,6 +12,7 @@ use std::{
 
 pub fn get_user_input(term: &mut Term) -> Result<String> {
     let mut current_input = String::new();
+    let mut tab_error = false;
 
     loop {
         let key = term
@@ -42,8 +43,25 @@ pub fn get_user_input(term: &mut Term) -> Result<String> {
                     term.clear_line()?;
                     print_prompt();
                     print!("{current_input}");
-                } else {
+                    tab_error = false;
+                } else if !tab_error {
                     print!("\x07");
+                    tab_error = true;
+                } else if tab_error {
+                    print!("\n");
+                    let mut possible_commands =
+                        find_executable_files(&current_input, &get_path()?, true)?
+                            .into_iter()
+                            .filter_map(|dir_entry| dir_entry.file_name().into_string().ok())
+                            .collect::<Vec<String>>();
+
+                    possible_commands.sort();
+
+                    println!("{}", possible_commands.join("  "));
+                    print_prompt();
+                    print!("{current_input}");
+
+                    tab_error = false;
                 }
             }
             console::Key::BackTab => todo!(),
