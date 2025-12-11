@@ -71,7 +71,6 @@ pub fn get_user_input(term: &mut Term) -> Result<String> {
                     print!("{BELL}");
                 } else {
                     term.clear_line()?;
-                    println!("{matching_commands:?}");
                     print_prompt();
                     print!("{}", matching_commands[matching_command_index].0);
                     matching_command_index =
