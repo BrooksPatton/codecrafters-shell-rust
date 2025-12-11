@@ -42,6 +42,8 @@ pub fn get_user_input(term: &mut Term) -> Result<String> {
                     term.clear_line()?;
                     print_prompt();
                     print!("{current_input}");
+                } else {
+                    print!("\x07");
                 }
             }
             console::Key::BackTab => todo!(),
