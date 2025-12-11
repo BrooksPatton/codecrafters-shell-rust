@@ -72,16 +72,20 @@ pub fn get_user_input(term: &mut Term) -> Result<String> {
                 } else {
                     term.clear_line()?;
                     print_prompt();
-                    let possible_matched_command = &matching_commands[matching_command_index].0;
-                    print!("{possible_matched_command}");
+
+                    current_input = matching_commands[matching_command_index].0.clone();
+
+                    if matching_commands.len() == 1 {
+                        current_input.push(' ');
+                    }
+
+                    print!("{current_input}");
                     matching_command_index =
                         if matching_command_index + 1 == matching_commands.len() {
                             0
                         } else {
                             matching_command_index + 1
                         };
-
-                    current_input = possible_matched_command.to_owned();
                 }
             }
             console::Key::BackTab => todo!(),
