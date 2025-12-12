@@ -1,4 +1,8 @@
-use std::{io::Write, os::unix::process};
+use std::{
+    io::Write,
+    iter::{Cycle, Map},
+    vec::IntoIter,
+};
 
 use anyhow::Result;
 use console::{Key, Term};
@@ -26,8 +30,7 @@ impl UserInput {
         let mut in_command = true;
         let mut user_input = String::new();
         let mut autocomplete_bell = false;
-        let mut autocomplete_lcp: Vec<String> = vec![];
-        let mut autocomplete_lcp_index = 0;
+        let mut autocomplete_lcp: Option<Cycle<Map<IntoIter<(usize, String)>, _>>> = None;
 
         self.print_prompt()?;
 
@@ -56,17 +59,9 @@ impl UserInput {
                         continue;
                     }
 
-                    if !autocomplete_lcp.is_empty() {
-                        if let Some(next_possible_command) =
-                            autocomplete_lcp.get(autocomplete_lcp_index)
-                        {
-                            user_input = next_possible_command.to_owned();
-                            autocomplete_lcp_index =
-                                if autocomplete_lcp_index == autocomplete_lcp.len() - 1 {
-                                    0
-                                } else {
-                                    autocomplete_lcp_index + 1
-                                };
+                    if let Some(matching_words) = autocomplete_lcp.as_mut() {
+                        if let Some(word) = matching_words.next() {
+                            user_input = String::from(word);
                             self.rewrite_line(&user_input)?;
                             continue;
                         }
@@ -110,16 +105,22 @@ impl UserInput {
                         }
                     }
 
-                    if autocomplete_lcp.is_empty() {
+                    if autocomplete_lcp.is_none() {
                         let mut possible_commands_with_lcp =
                             calculate_longest_common_prefix(&user_input, &possible_commands);
 
                         possible_commands_with_lcp.sort_by(|a, b| a.0.cmp(&b.0));
-                        autocomplete_lcp_index = 0;
-                        autocomplete_lcp = possible_commands_with_lcp
-                            .into_iter()
-                            .map(|(_, word)| word)
-                            .collect();
+                        autocomplete_lcp = Some(
+                            possible_commands_with_lcp
+                                .into_iter()
+                                .map(|(_, word)| word)
+                                .cycle(),
+                        );
+
+                        if let Some(word) = autocomplete_lcp.as_mut().unwrap().next() {
+                            user_input = word;
+                            self.rewrite_line(&user_input)?;
+                        }
                     }
                 }
                 Key::BackTab => todo!(),
