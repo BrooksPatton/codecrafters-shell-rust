@@ -1,6 +1,7 @@
 mod builtin_commands;
 mod command;
 mod errors;
+mod get_user_input;
 pub mod input_parser;
 pub mod utilities;
 
@@ -10,6 +11,7 @@ use crate::{
         pwd::pwd, run_external_executable::run_external_executable,
     },
     errors::CustomError,
+    get_user_input::UserInput,
     utilities::{
         append_all_to_file, find_executable_files, get_command, get_path, print_prompt,
         write_all_to_file,
@@ -21,12 +23,15 @@ pub fn run() -> Result<()> {
     let path = get_path().context("Getting path")?;
     let mut stdout: Vec<String> = vec![];
     let mut stderr: Vec<String> = vec![];
-    let mut term = console::Term::stdout();
+    let user_input = UserInput::new("$ ");
 
     loop {
-        print_prompt();
+        let user_input_line = user_input.readline()?;
+        // if command is builtin: run it
+        // if command is not builtin check if we can't find an executable print error
+        // if command is executable run it
 
-        let command = get_command(&mut stderr, &mut term).context("getting command")?;
+        let command = get_command(&mut stderr, user_input_line).context("getting command")?;
 
         match command.builtin_command {
             BuiltinCommand::ChangeDirectory(arguments) => {

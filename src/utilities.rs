@@ -144,8 +144,7 @@ pub fn print_prompt() {
     io::stdout().flush().unwrap();
 }
 
-pub fn get_command(standard_out: &mut Vec<String>, term: &mut Term) -> Result<Command> {
-    let user_input = get_user_input(term)?;
+pub fn get_command(standard_out: &mut Vec<String>, user_input: String) -> Result<Command> {
     let command = Command::new(user_input, standard_out)?;
 
     Ok(command)
