@@ -3,7 +3,10 @@ use std::io::Write;
 use anyhow::Result;
 use console::{Key, Term};
 
-use crate::builtin_commands::BuiltinCommand;
+use crate::{
+    builtin_commands::BuiltinCommand,
+    utilities::{find_executable_files, get_path},
+};
 
 pub struct UserInput {
     ps1: &'static str,
@@ -28,7 +31,7 @@ impl UserInput {
 
             match key_code {
                 Key::Unknown => todo!(),
-                Key::UnknownEscSeq(items) => todo!(),
+                Key::UnknownEscSeq(_items) => todo!(),
                 Key::ArrowLeft => todo!(),
                 Key::ArrowRight => todo!(),
                 Key::ArrowUp => todo!(),
@@ -56,10 +59,18 @@ impl UserInput {
                     }
 
                     // if no possible matching builtins or executables ring the bell
-                    let possible_commands = self.get_possible_commands(&user_input);
+                    let possible_commands = self.get_possible_commands(&user_input)?;
 
                     if possible_commands.is_empty() {
                         self.print_bell()?;
+                        continue;
+                    }
+
+                    if possible_commands.len() == 1 {
+                        user_input = format!("{} ", possible_commands[0]);
+                        in_command = false;
+                        self.rewrite_line(&user_input)?;
+                        continue;
                     }
                 }
                 Key::BackTab => todo!(),
@@ -109,14 +120,20 @@ impl UserInput {
         Ok(())
     }
 
-    fn get_possible_commands(&self, user_input: &str) -> Vec<String> {
+    fn get_possible_commands(&self, user_input: &str) -> Result<Vec<String>> {
         let matching_builtins = BuiltinCommand::matches(user_input);
 
         if matching_builtins.len() > 0 {
-            return matching_builtins;
+            return Ok(matching_builtins);
         }
 
-        vec![]
+        let path = get_path()?;
+        let external_executables = find_executable_files(user_input, &path, true)?
+            .into_iter()
+            .filter_map(|dir_entry| Some(dir_entry.file_name().to_str()?.to_owned()))
+            .collect::<Vec<String>>();
+
+        Ok(external_executables)
     }
 
     fn print_bell(&self) -> Result<()> {

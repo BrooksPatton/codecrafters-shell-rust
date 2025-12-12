@@ -13,8 +13,7 @@ use crate::{
     errors::CustomError,
     get_user_input::UserInput,
     utilities::{
-        append_all_to_file, find_executable_files, get_command, get_path, print_prompt,
-        write_all_to_file,
+        append_all_to_file, find_executable_files, get_command, get_path, write_all_to_file,
     },
 };
 use anyhow::{Context, Result};
