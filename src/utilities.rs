@@ -283,3 +283,19 @@ pub fn all_matching_commands_lcp_the_same(matching_commands: &[(String, usize)])
 
     matching_commands[0].1 == matching_commands[matching_commands.len() - 1].1
 }
+
+pub fn are_all_items_same_length(list: &[String]) -> Result<bool> {
+    if list.is_empty() {
+        bail!("list must not be empty");
+    }
+
+    let length = list[0].len();
+
+    for item in list {
+        if item.len() != length {
+            return Ok(false);
+        }
+    }
+
+    Ok(true)
+}

@@ -5,7 +5,7 @@ use console::{Key, Term};
 
 use crate::{
     builtin_commands::BuiltinCommand,
-    utilities::{find_executable_files, get_path},
+    utilities::{are_all_items_same_length, find_executable_files, get_path},
 };
 
 pub struct UserInput {
@@ -23,6 +23,7 @@ impl UserInput {
     pub fn readline(&self) -> Result<String> {
         let mut in_command = true;
         let mut user_input = String::new();
+        let mut autocomplete_bell = false;
 
         self.print_prompt()?;
 
@@ -59,7 +60,7 @@ impl UserInput {
                     }
 
                     // if no possible matching builtins or executables ring the bell
-                    let possible_commands = self.get_possible_commands(&user_input)?;
+                    let mut possible_commands = self.get_possible_commands(&user_input)?;
 
                     if possible_commands.is_empty() {
                         self.print_bell()?;
@@ -71,6 +72,22 @@ impl UserInput {
                         in_command = false;
                         self.rewrite_line(&user_input)?;
                         continue;
+                    }
+
+                    if are_all_items_same_length(&possible_commands)? {
+                        if autocomplete_bell {
+                            autocomplete_bell = false;
+                            possible_commands.sort();
+                            self.term.write_line("")?;
+                            write!(&self.term, "{}", possible_commands.join("  "))?;
+                            self.term.write_line("")?;
+                            self.rewrite_line(&user_input)?;
+                            continue;
+                        } else {
+                            self.print_bell()?;
+                            autocomplete_bell = true;
+                            continue;
+                        }
                     }
                 }
                 Key::BackTab => todo!(),
