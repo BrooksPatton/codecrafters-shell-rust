@@ -42,9 +42,13 @@ pub fn get_user_input(term: &mut Term) -> Result<String> {
             console::Key::End => todo!(),
             console::Key::Tab => {
                 if let Some(command) = find_matching_builtin(&current_input)? {
-                    current_input = command;
+                    current_input = format!("{command} ");
                     matching_commands.clear();
-                    break;
+                    term.clear_line()?;
+                    print_prompt();
+                    print!("{current_input}");
+                    io::stdout().flush()?;
+                    continue;
                 }
 
                 if matching_commands.is_empty() {
