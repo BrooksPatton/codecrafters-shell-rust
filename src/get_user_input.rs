@@ -54,6 +54,13 @@ impl UserInput {
                         self.rewrite_line(&user_input)?;
                         continue;
                     }
+
+                    // if no possible matching builtins or executables ring the bell
+                    let possible_commands = self.get_possible_commands(&user_input);
+
+                    if possible_commands.is_empty() {
+                        self.print_bell()?;
+                    }
                 }
                 Key::BackTab => todo!(),
                 Key::Alt => todo!(),
@@ -98,6 +105,23 @@ impl UserInput {
         self.term.clear_line()?;
         self.print_prompt()?;
         write!(&self.term, "{user_input}")?;
+
+        Ok(())
+    }
+
+    fn get_possible_commands(&self, user_input: &str) -> Vec<String> {
+        let matching_builtins = BuiltinCommand::matches(user_input);
+
+        if matching_builtins.len() > 0 {
+            return matching_builtins;
+        }
+
+        vec![]
+    }
+
+    fn print_bell(&self) -> Result<()> {
+        write!(&self.term, "\x07")?;
+        self.term.flush()?;
 
         Ok(())
     }
