@@ -1,11 +1,13 @@
-use std::io::Write;
+use std::{io::Write, os::unix::process};
 
 use anyhow::Result;
 use console::{Key, Term};
 
 use crate::{
     builtin_commands::BuiltinCommand,
-    utilities::{are_all_items_same_length, find_executable_files, get_path},
+    utilities::{
+        are_all_items_same_length, calculate_longest_common_prefix, find_executable_files, get_path,
+    },
 };
 
 pub struct UserInput {
@@ -24,6 +26,8 @@ impl UserInput {
         let mut in_command = true;
         let mut user_input = String::new();
         let mut autocomplete_bell = false;
+        let mut autocomplete_lcp: Vec<String> = vec![];
+        let mut autocomplete_lcp_index = 0;
 
         self.print_prompt()?;
 
@@ -50,6 +54,22 @@ impl UserInput {
                 Key::Tab => {
                     if !in_command {
                         continue;
+                    }
+
+                    if !autocomplete_lcp.is_empty() {
+                        if let Some(next_possible_command) =
+                            autocomplete_lcp.get(autocomplete_lcp_index)
+                        {
+                            user_input = next_possible_command.to_owned();
+                            autocomplete_lcp_index =
+                                if autocomplete_lcp_index == autocomplete_lcp.len() - 1 {
+                                    0
+                                } else {
+                                    autocomplete_lcp_index + 1
+                                };
+                            self.rewrite_line(&user_input)?;
+                            continue;
+                        }
                     }
 
                     if let Some(completed_command) = self.autocomplete_one_builtin(&user_input) {
@@ -88,6 +108,18 @@ impl UserInput {
                             autocomplete_bell = true;
                             continue;
                         }
+                    }
+
+                    if autocomplete_lcp.is_empty() {
+                        let mut possible_commands_with_lcp =
+                            calculate_longest_common_prefix(&user_input, &possible_commands);
+
+                        possible_commands_with_lcp.sort_by(|a, b| a.0.cmp(&b.0));
+                        autocomplete_lcp_index = 0;
+                        autocomplete_lcp = possible_commands_with_lcp
+                            .into_iter()
+                            .map(|(_, word)| word)
+                            .collect();
                     }
                 }
                 Key::BackTab => todo!(),

@@ -299,3 +299,16 @@ pub fn are_all_items_same_length(list: &[String]) -> Result<bool> {
 
     Ok(true)
 }
+
+pub fn calculate_longest_common_prefix(word: &str, list: &[String]) -> Vec<(usize, String)> {
+    let word_length = word.len();
+
+    list.iter()
+        .filter_map(|list_word| {
+            let remaining_word = list_word.get(word_length..)?;
+            let lcp = remaining_word.len();
+
+            Some((lcp, list_word.to_owned()))
+        })
+        .collect()
+}
