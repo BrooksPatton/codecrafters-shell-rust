@@ -41,6 +41,12 @@ pub fn get_user_input(term: &mut Term) -> Result<String> {
             console::Key::Home => todo!(),
             console::Key::End => todo!(),
             console::Key::Tab => {
+                if let Some(command) = find_matching_builtin(&current_input)? {
+                    current_input = command;
+                    matching_commands.clear();
+                    break;
+                }
+
                 if matching_commands.is_empty() {
                     let path = get_path()?;
                     let mut possible_matching_builtins = BuiltinCommand::matches(&current_input);
@@ -248,7 +254,7 @@ pub fn append_all_to_file(messages: &[String], filename: &str) -> Result<()> {
     Ok(())
 }
 
-pub fn find_matching_command(partial: &str) -> Result<Option<String>> {
+pub fn find_matching_builtin(partial: &str) -> Result<Option<String>> {
     let matching_builtins = BuiltinCommand::matches(partial);
 
     Ok(if matching_builtins.len() > 1 {
@@ -256,14 +262,7 @@ pub fn find_matching_command(partial: &str) -> Result<Option<String>> {
     } else if matching_builtins.len() == 1 {
         matching_builtins.first().cloned()
     } else {
-        let path = get_path()?;
-        let possible_external_commands = find_executable_files(partial, &path, true)?;
-
-        if possible_external_commands.len() == 1 {
-            possible_external_commands[0].file_name().into_string().ok()
-        } else {
-            None
-        }
+        None
     })
 }
 
