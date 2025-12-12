@@ -137,6 +137,8 @@ impl UserInput {
                     if character == ' ' {
                         in_command = false;
                     }
+
+                    autocomplete_lcp = None;
                 }
                 Key::CtrlC => todo!(),
                 _ => (),
