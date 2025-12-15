@@ -48,7 +48,13 @@ pub fn run() -> Result<()> {
                 if let Some(executable) =
                     find_executable_files(&command_string, &path, false)?.first()
                 {
-                    run_external_executable(executable, &arguments, &mut stdout, &mut stderr)?;
+                    run_external_executable(
+                        executable,
+                        arguments,
+                        command.piped_commands,
+                        &mut stdout,
+                        &mut stderr,
+                    )?;
                 } else {
                     let error = CustomError::CommandNotFound(command_string);
                     stderr.push(format!("{error}"));
