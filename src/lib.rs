@@ -66,7 +66,7 @@ pub fn run() -> Result<()> {
             command::Output::Standard => {
                 stdout
                     .iter()
-                    .map(|message| message.trim())
+                    .map(|message| message.trim_end())
                     .for_each(|message| println!("{message}"));
             }
             command::Output::CreateFile(input) => {
