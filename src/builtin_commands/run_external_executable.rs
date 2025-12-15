@@ -31,7 +31,9 @@ pub fn run_external_executable(
 
                 if let Some(mut child) = previous_child {
                     current_command.stdin(child.stdout.take().unwrap());
-                }
+                } else {
+                    current_command.stdin(Stdio::null());
+                };
 
                 let child = current_command.spawn()?;
 
