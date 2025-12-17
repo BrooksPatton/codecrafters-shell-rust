@@ -30,16 +30,28 @@ pub fn run_external_executable(
     let mut last_command_buffer = last_command_stdout.fill_buf()?;
     let mut last_command_output = String::from_utf8(last_command_buffer.to_vec())?;
 
-    thread::sleep(Duration::from_nanos(1));
-    if let Some(_exit_code) = first_command.try_wait()? {
-        if let Some(first_command_stderr) = first_command.stderr.take() {
-            let mut stderr_reader = BufReader::new(first_command_stderr);
-            let buffer = stderr_reader.fill_buf()?;
-            let message = String::from_utf8(buffer.to_vec())?;
+    let mut cycle_count = 0;
+    let cycle_count_max = 100;
+    match first_command.try_wait()? {
+        Some(exit_status) => {
+            if !exit_status.success() {
+                if let Some(first_command_stderr) = first_command.stderr.take() {
+                    let mut stderr_reader = BufReader::new(first_command_stderr);
+                    let buffer = stderr_reader.fill_buf()?;
+                    let message = String::from_utf8(buffer.to_vec())?;
 
-            stderr.push(message);
-            return Ok(());
-        };
+                    stderr.push(message);
+                    return Ok(());
+                };
+            }
+        }
+        None =>
+        {
+            #[allow(unused)]
+            if cycle_count < cycle_count_max {
+                cycle_count += 1;
+            }
+        }
     }
 
     for (piped_command_name, piped_command_arguments) in piped_commands {
