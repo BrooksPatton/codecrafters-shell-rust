@@ -3,6 +3,8 @@ use std::{
     fs::DirEntry,
     io::{BufRead, BufReader, BufWriter, Write},
     process::{self, Stdio},
+    thread,
+    time::Duration,
 };
 
 pub fn run_external_executable(
@@ -25,6 +27,20 @@ pub fn run_external_executable(
         return Ok(());
     };
     let mut last_command_stdout = BufReader::new(last_command_stdout);
+    let mut last_command_buffer = last_command_stdout.fill_buf()?;
+    let mut last_command_output = String::from_utf8(last_command_buffer.to_vec())?;
+
+    thread::sleep(Duration::from_nanos(1));
+    if let Some(_exit_code) = first_command.try_wait()? {
+        if let Some(first_command_stderr) = first_command.stderr.take() {
+            let mut stderr_reader = BufReader::new(first_command_stderr);
+            let buffer = stderr_reader.fill_buf()?;
+            let message = String::from_utf8(buffer.to_vec())?;
+
+            stderr.push(message);
+            return Ok(());
+        };
+    }
 
     for (piped_command_name, piped_command_arguments) in piped_commands {
         let mut piped_command = process::Command::new(piped_command_name.clone())
@@ -41,8 +57,7 @@ pub fn run_external_executable(
             };
 
             let mut piped_command_stdin_writer = BufWriter::new(piped_command_stdin);
-            let mut last_stdout = last_command_stdout.fill_buf()?;
-            piped_command_stdin_writer.write_all(&mut last_stdout)?;
+            piped_command_stdin_writer.write_all(&mut last_command_output.as_bytes())?;
             piped_command_stdin_writer.flush()?;
         }
 
@@ -57,6 +72,8 @@ pub fn run_external_executable(
                         };
 
                         last_command_stdout = BufReader::new(piped_command_stdout);
+                        last_command_buffer = last_command_stdout.fill_buf()?;
+                        last_command_output = String::from_utf8(last_command_buffer.to_vec())?;
                     } else {
                         if let Some(error) = piped_command.stderr.take() {
                             let mut reader = BufReader::new(error);
