@@ -1,7 +1,7 @@
 use anyhow::Result;
 use std::{
     fs::DirEntry,
-    io::{BufRead, BufReader, Read, Write},
+    io::{BufRead, BufReader, BufWriter, Write},
     process::{self, Stdio},
 };
 
@@ -20,21 +20,6 @@ pub fn run_external_executable(
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()?;
-
-    let Some(first_command_stderr) = first_command.stderr.take() else {
-        stderr.push(format!("{command_name} doesn't have a standard error"));
-        return Ok(());
-    };
-    let mut first_command_stderr_reader = BufReader::new(first_command_stderr);
-
-    let mut first_command_error = vec![];
-    first_command_stderr_reader.read_to_end(&mut first_command_error)?;
-    if !first_command_error.is_empty() {
-        let message = String::from_utf8(first_command_error)?;
-        stderr.push(message);
-        return Ok(());
-    }
-
     let Some(last_command_stdout) = first_command.stdout.take() else {
         stderr.push(format!("Command {command_name} doesn't have standard out"));
         return Ok(());
@@ -50,13 +35,15 @@ pub fn run_external_executable(
             .spawn()?;
 
         {
-            let Some(mut piped_command_stdin) = piped_command.stdin.take() else {
+            let Some(piped_command_stdin) = piped_command.stdin.take() else {
                 stderr.push("Error: piped command doesn't have a standard out. This is probably a shell problem".to_owned());
                 return Ok(());
             };
 
-            piped_command_stdin.write_all(&mut last_command_stdout.fill_buf()?)?;
-            piped_command_stdin.flush()?;
+            let mut piped_command_stdin_writer = BufWriter::new(piped_command_stdin);
+            let mut last_stdout = last_command_stdout.fill_buf()?;
+            piped_command_stdin_writer.write_all(&mut last_stdout)?;
+            piped_command_stdin_writer.flush()?;
         }
 
         loop {
@@ -83,7 +70,9 @@ pub fn run_external_executable(
                     }
                     break;
                 }
-                None => (),
+                None => {
+                    piped_command.wait()?;
+                }
             }
         }
     }
