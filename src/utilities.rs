@@ -89,6 +89,10 @@ pub fn find_executable_files(
 }
 
 pub fn write_all_to_file(messages: &[String], filename: &str) -> Result<()> {
+    let messages = messages
+        .iter()
+        .filter(|message| !message.is_empty())
+        .collect::<Vec<&String>>();
     let file_path = Path::new(filename);
     let mut file = std::fs::File::options()
         .write(true)
@@ -99,6 +103,10 @@ pub fn write_all_to_file(messages: &[String], filename: &str) -> Result<()> {
     messages
         .iter()
         .try_for_each(|message| file.write_all(message.as_bytes()))?;
+
+    if !messages.is_empty() {
+        file.write(b"\n")?;
+    }
 
     Ok(())
 }
@@ -113,15 +121,6 @@ pub fn append_all_to_file(messages: &[String], filename: &str) -> Result<()> {
         .create(true)
         .append(true)
         .open(file_path)?;
-
-    // if let Ok(metadata) = file.metadata() {
-    //     if metadata.len() > 0 {
-    //         file.write(b"\n")
-    //             .context("writing new line to appended file")?;
-    //     }
-    // } else {
-    //     bail!("Cannot read open file for appending");
-    // }
 
     filtered_messages
         .iter()
