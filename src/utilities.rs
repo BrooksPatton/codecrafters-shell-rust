@@ -104,6 +104,10 @@ pub fn write_all_to_file(messages: &[String], filename: &str) -> Result<()> {
 }
 
 pub fn append_all_to_file(messages: &[String], filename: &str) -> Result<()> {
+    let filtered_messages = messages
+        .iter()
+        .filter(|message| !message.is_empty())
+        .collect::<Vec<&String>>();
     let file_path = Path::new(filename);
     let mut file = std::fs::File::options()
         .create(true)
@@ -119,12 +123,14 @@ pub fn append_all_to_file(messages: &[String], filename: &str) -> Result<()> {
     //     bail!("Cannot read open file for appending");
     // }
 
-    messages
+    filtered_messages
         .iter()
         .map(|message| message.trim())
         .try_for_each(|message| file.write_all(message.as_bytes()))?;
 
-    file.write(b"\n")?;
+    if !filtered_messages.is_empty() {
+        file.write(b"\n")?;
+    }
 
     Ok(())
 }
