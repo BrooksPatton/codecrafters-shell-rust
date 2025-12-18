@@ -89,24 +89,31 @@ pub fn find_executable_files(
 }
 
 pub fn write_all_to_file(messages: &[String], filename: &str) -> Result<()> {
-    let messages = messages
-        .iter()
-        .filter(|message| !message.is_empty())
-        .collect::<Vec<&String>>();
     let file_path = Path::new(filename);
     let mut file = std::fs::File::options()
         .write(true)
         .truncate(true)
         .create(true)
         .open(file_path)?;
+    let mut wrote_line = false;
 
     messages
         .iter()
-        .try_for_each(|message| file.write_all(message.as_bytes()))?;
+        .filter_map(|message| {
+            if message.is_empty() {
+                None
+            } else {
+                Some(message.trim())
+            }
+        })
+        .try_for_each(|message| {
+            wrote_line = true;
+            file.write_all(message.as_bytes())
+        })?;
 
-    // if !messages.is_empty() {
-    //     file.write(b"\n")?;
-    // }
+    if wrote_line {
+        file.write(b"\n")?;
+    }
 
     Ok(())
 }
@@ -124,7 +131,7 @@ pub fn append_all_to_file(messages: &[String], filename: &str) -> Result<()> {
 
     filtered_messages
         .iter()
-        .map(|message| message.trim())
+        .map(|message| message.trim_end())
         .try_for_each(|message| file.write_all(message.as_bytes()))?;
 
     if !filtered_messages.is_empty() {
