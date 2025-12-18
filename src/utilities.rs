@@ -104,9 +104,9 @@ pub fn write_all_to_file(messages: &[String], filename: &str) -> Result<()> {
         .iter()
         .try_for_each(|message| file.write_all(message.as_bytes()))?;
 
-    if !messages.is_empty() {
-        file.write(b"\n")?;
-    }
+    // if !messages.is_empty() {
+    //     file.write(b"\n")?;
+    // }
 
     Ok(())
 }
