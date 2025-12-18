@@ -69,7 +69,7 @@ pub fn run_external(
         };
     };
 
-    child.wait_with_output()?;
+    let _output = child.wait_with_output()?;
 
     Ok(())
 }

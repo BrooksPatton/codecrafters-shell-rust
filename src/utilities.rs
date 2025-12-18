@@ -110,19 +110,21 @@ pub fn append_all_to_file(messages: &[String], filename: &str) -> Result<()> {
         .append(true)
         .open(file_path)?;
 
-    if let Ok(metadata) = file.metadata() {
-        if metadata.len() > 0 {
-            file.write(b"\n")
-                .context("writing new line to appended file")?;
-        }
-    } else {
-        bail!("Cannot read open file for appending");
-    }
+    // if let Ok(metadata) = file.metadata() {
+    //     if metadata.len() > 0 {
+    //         file.write(b"\n")
+    //             .context("writing new line to appended file")?;
+    //     }
+    // } else {
+    //     bail!("Cannot read open file for appending");
+    // }
 
     messages
         .iter()
         .map(|message| message.trim())
         .try_for_each(|message| file.write_all(message.as_bytes()))?;
+
+    file.write(b"\n")?;
 
     Ok(())
 }

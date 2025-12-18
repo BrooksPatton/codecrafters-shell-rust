@@ -1,17 +1,15 @@
-use std::{
-    io::Write,
-    iter::{Cycle, Map},
-    vec::IntoIter,
-};
-
-use anyhow::Result;
-use console::{Key, Term};
-
 use crate::{
     builtin_commands::BuiltinCommand,
     utilities::{
         are_all_items_same_length, calculate_longest_common_prefix, find_executable_files, get_path,
     },
+};
+use anyhow::Result;
+use console::{Key, Term};
+use std::{
+    io::Write,
+    iter::{Cycle, Map},
+    vec::IntoIter,
 };
 
 pub struct UserInput {
@@ -149,6 +147,7 @@ impl UserInput {
     }
 
     fn print_prompt(&self) -> Result<()> {
+        self.term.flush()?;
         write!(&self.term, "{}", self.ps1)?;
 
         Ok(())

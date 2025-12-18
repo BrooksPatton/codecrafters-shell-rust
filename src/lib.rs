@@ -65,13 +65,6 @@ pub fn run() -> Result<()> {
 
                     commands.append(&mut command.piped_commands);
                     run_external(commands, stdout, stderr)?;
-                    // run_external_executable(
-                    //     executable,
-                    //     arguments,
-                    //     command.piped_commands,
-                    //     &mut stdout,
-                    //     &mut stderr,
-                    // )?;
                 } else {
                     let error = CustomError::CommandNotFound(command_string);
                     stderr.push(format!("{error}"));
