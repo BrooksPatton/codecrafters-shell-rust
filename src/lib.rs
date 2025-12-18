@@ -8,7 +8,7 @@ pub mod utilities;
 use crate::{
     builtin_commands::{
         BuiltinCommand, builtin_type::builtin_type, change_directory::change_directory, echo::echo,
-        pwd::pwd, run_external_executable::run_external_executable,
+        pwd::pwd, run_external_executable::run_external,
     },
     errors::CustomError,
     get_user_input::UserInput,
@@ -30,7 +30,7 @@ pub fn run() -> Result<()> {
         // if command is not builtin check if we can't find an executable print error
         // if command is executable run it
 
-        let command = get_command(&mut stderr, user_input_line).context("getting command")?;
+        let mut command = get_command(&mut stderr, user_input_line).context("getting command")?;
 
         match command.builtin_command {
             BuiltinCommand::ChangeDirectory(arguments) => {
@@ -48,13 +48,30 @@ pub fn run() -> Result<()> {
                 if let Some(executable) =
                     find_executable_files(&command_string, &path, false)?.first()
                 {
-                    run_external_executable(
-                        executable,
-                        arguments,
-                        command.piped_commands,
-                        &mut stdout,
-                        &mut stderr,
-                    )?;
+                    let first_command_name = executable.file_name();
+                    let first_command_name =
+                        first_command_name.to_str().unwrap_or_default().to_owned();
+                    let mut commands = vec![(first_command_name, arguments)];
+                    let stdout = if matches!(command.standard_out, command::Output::Standard) {
+                        None
+                    } else {
+                        Some(&mut stdout)
+                    };
+                    let stderr = if matches!(command.standard_error, command::Output::Standard) {
+                        None
+                    } else {
+                        Some(&mut stderr)
+                    };
+
+                    commands.append(&mut command.piped_commands);
+                    run_external(commands, stdout, stderr)?;
+                    // run_external_executable(
+                    //     executable,
+                    //     arguments,
+                    //     command.piped_commands,
+                    //     &mut stdout,
+                    //     &mut stderr,
+                    // )?;
                 } else {
                     let error = CustomError::CommandNotFound(command_string);
                     stderr.push(format!("{error}"));
