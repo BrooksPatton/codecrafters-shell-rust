@@ -8,6 +8,7 @@ pub mod utilities;
 use std::{
     fs::exists,
     io::{self, PipeReader},
+    process,
 };
 
 use crate::{
@@ -26,7 +27,7 @@ pub fn run() -> Result<()> {
     let path = get_path().context("Getting path")?;
     let user_input = UserInput::new("$ ");
 
-    loop {
+    'repl_loop: loop {
         let user_input_line = user_input.readline()?;
         let mut commands = match parse_user_input(user_input_line) {
             Ok(commands) => commands,
@@ -38,7 +39,7 @@ pub fn run() -> Result<()> {
         // create the pipes here
         let mut previous_commands_std_reader: Option<PipeReader> = None;
 
-        while let Some(command) = commands.pop_front() {
+        'run_commands_loop: while let Some(command) = commands.pop_front() {
             let piping_command_stdout = !commands.is_empty();
             let (stdin_reader, stdin_writer) = io::pipe()?;
             let (mut stderr_reader, stderr_writer) = io::pipe()?;
@@ -52,7 +53,7 @@ pub fn run() -> Result<()> {
                     change_directory(&arguments, next_command_io)
                 }
                 BuiltinCommand::Echo(arguments) => echo(&arguments, next_command_io),
-                // BuiltinCommand::Exit => break,
+                BuiltinCommand::Exit => break 'repl_loop,
                 // BuiltinCommand::PWD => pwd(&mut stdout, &mut errors)?,
                 // BuiltinCommand::Type(arguments) => {
                 //     builtin_type(arguments, &path, &mut stdout, &mut errors)?
@@ -169,4 +170,6 @@ pub fn run() -> Result<()> {
         //     stderr.clear();
         //     stdout.clear();
     }
+
+    Ok(())
 }
