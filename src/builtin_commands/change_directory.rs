@@ -1,26 +1,35 @@
-use anyhow::{Context, Result, bail};
+use crate::{command::CommandIO, errors::ErrorExitCode};
 use std::{
     env::{home_dir, set_current_dir},
+    io::Write,
     path::Path,
 };
 
-pub fn change_directory(arguments: &[String], stderr: &mut Vec<String>) -> Result<()> {
+pub fn change_directory(
+    arguments: &[String],
+    mut command_io_in: CommandIO,
+) -> Result<(), ErrorExitCode> {
     let Some(home_directory) = home_dir() else {
-        bail!("Error: you don't seem to have a home directory");
+        writeln!(command_io_in.stderr, "Missing home directory")?;
+        return Err(ErrorExitCode::new_const::<1>());
     };
-    let Some(target_path) = arguments.first() else {
-        std::env::set_current_dir(home_directory).context("changing to home directory")?;
-        return Ok(());
+    let target_path = match arguments.first() {
+        Some(path) => {
+            let path = Path::new(path);
+            path.to_path_buf()
+        }
+        None => home_directory,
     };
-    let target_path = Path::new(&target_path);
 
     if target_path.is_dir() {
-        set_current_dir(target_path).context("Changing to target directory")?;
+        if let Err(error) = set_current_dir(target_path) {
+            writeln!(command_io_in.stderr, "{error:?}")?;
+            return Err(ErrorExitCode::new_const::<2>());
+        }
     } else {
-        stderr.push(format!(
-            "cd: {}: No such file or directory",
-            target_path.to_str().unwrap_or_default()
-        ));
+        let target_path = target_path.to_string_lossy().into_owned();
+        writeln!(command_io_in.stderr, "{target_path} is not a directory")?;
+        return Err(ErrorExitCode::new_const::<3>());
     }
 
     Ok(())

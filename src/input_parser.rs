@@ -1,3 +1,5 @@
+use std::collections::VecDeque;
+
 enum ProcessInputState {
     Escaping,
     InsideSingleQuotes,
@@ -32,8 +34,8 @@ impl ProcessInputState {
     }
 }
 
-pub fn parse_input(input: String) -> Vec<String> {
-    let mut result = vec![];
+pub fn parse_input(input: String) -> VecDeque<String> {
+    let mut result = VecDeque::new();
     let mut current_argument = String::new();
     let mut state = ProcessInputState::Normal;
 
@@ -78,7 +80,7 @@ pub fn parse_input(input: String) -> Vec<String> {
                 if state.inside_quotes() {
                     current_argument.push(argument_char);
                 } else if !current_argument.is_empty() {
-                    result.push(current_argument.clone());
+                    result.push_back(current_argument.clone());
                     current_argument.clear();
                 }
             }
@@ -103,8 +105,22 @@ pub fn parse_input(input: String) -> Vec<String> {
     }
 
     if !current_argument.is_empty() {
-        result.push(current_argument);
+        result.push_back(current_argument);
     }
 
     result
+}
+
+pub fn input_for_one_command(user_input: &mut VecDeque<String>) -> VecDeque<String> {
+    let mut single_command_input = VecDeque::new();
+
+    while let Some(input_fragment) = user_input.pop_front() {
+        if input_fragment == "|" {
+            break;
+        }
+
+        single_command_input.push_back(input_fragment);
+    }
+
+    single_command_input
 }

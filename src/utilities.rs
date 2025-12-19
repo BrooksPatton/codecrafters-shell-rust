@@ -14,12 +14,6 @@ pub fn print_prompt() {
     io::stdout().flush().unwrap();
 }
 
-pub fn get_command(standard_out: &mut Vec<String>, user_input: String) -> Result<Command> {
-    let command = Command::new(user_input, standard_out)?;
-
-    Ok(command)
-}
-
 pub fn get_path() -> Result<Vec<PathBuf>> {
     let path = env::var("PATH").context("Getting PATH environment variable")?;
     let split_paths = split_paths(&path).map(|path| {
