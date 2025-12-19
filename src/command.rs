@@ -144,6 +144,9 @@ pub fn parse_user_input(user_input: String) -> Result<VecDeque<Command>, CustomE
     Ok(commands)
 }
 
+/// Thanks to Justus_Flegel for help with pipes and this pattern.
+/// we've only partially implemented it so far
+/// https://play.rust-lang.org/?version=stable&mode=debug&edition=2024&gist=99c818e83dfaa1204dc44cca93498bc1
 pub struct CommandIO {
     pub stdin: PipeReader,
     pub stdout: PipeWriter,

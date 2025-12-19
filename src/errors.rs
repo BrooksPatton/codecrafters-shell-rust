@@ -14,6 +14,8 @@ pub enum CustomError {
     DirectoryOrFileNotFound(String),
 }
 
+/// Special thanks to Justus_Fluegel on Twitch for helping with errors
+/// https://play.rust-lang.org/?version=stable&mode=debug&edition=2024&gist=fb3dd1a5d6eec0899f16b45342652b80
 pub struct ErrorExitCode(std::num::NonZero<i32>);
 
 impl ErrorExitCode {
