@@ -39,7 +39,7 @@ pub fn run() -> Result<()> {
         // create the pipes here
         let mut previous_commands_std_reader: Option<PipeReader> = None;
 
-        'run_commands_loop: while let Some(command) = commands.pop_front() {
+        while let Some(command) = commands.pop_front() {
             let piping_command_stdout = !commands.is_empty();
             let (stdin_reader, stdin_writer) = io::pipe()?;
             let (mut stderr_reader, stderr_writer) = io::pipe()?;
@@ -55,9 +55,7 @@ pub fn run() -> Result<()> {
                 BuiltinCommand::Echo(arguments) => echo(&arguments, next_command_io),
                 BuiltinCommand::Exit => break 'repl_loop,
                 BuiltinCommand::PWD => pwd(next_command_io),
-                // BuiltinCommand::Type(arguments) => {
-                //     builtin_type(arguments, &path, &mut stdout, &mut errors)?
-                // }
+                BuiltinCommand::Type(arguments) => builtin_type(arguments, &path, next_command_io),
                 // BuiltinCommand::NotFound(command_name, arguments) => {
                 //     if let Some(executable) =
                 //         find_executable_files(&command_name, &path, false)?.first()
