@@ -128,6 +128,12 @@ pub enum Output {
     AppendFile(String),
 }
 
+impl Output {
+    pub fn is_standard(&self) -> bool {
+        matches!(self, Self::Standard)
+    }
+}
+
 pub fn parse_user_input(user_input: String) -> Result<VecDeque<Command>, CustomError> {
     let mut commands = VecDeque::new();
     let mut parsed_input = parse_input(user_input);
@@ -148,13 +154,13 @@ pub fn parse_user_input(user_input: String) -> Result<VecDeque<Command>, CustomE
 /// we've only partially implemented it so far
 /// https://play.rust-lang.org/?version=stable&mode=debug&edition=2024&gist=99c818e83dfaa1204dc44cca93498bc1
 pub struct CommandIO {
-    pub stdin: PipeReader,
+    pub stdin: Option<PipeReader>,
     pub stdout: PipeWriter,
     pub stderr: PipeWriter,
 }
 
 impl CommandIO {
-    pub fn new(stdin: PipeReader, stdout: PipeWriter, stderr: PipeWriter) -> Self {
+    pub fn new(stdin: Option<PipeReader>, stdout: PipeWriter, stderr: PipeWriter) -> Self {
         Self {
             stdin,
             stdout,

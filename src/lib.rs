@@ -7,7 +7,8 @@ pub mod utilities;
 
 use std::{
     fs::exists,
-    io::{self, PipeReader},
+    io::{self, BufRead, BufReader, PipeReader, Read, Write},
+    num::NonZero,
     process,
 };
 
@@ -17,7 +18,7 @@ use crate::{
         pwd::pwd, run_external_executable::run_external,
     },
     command::{CommandIO, parse_user_input},
-    errors::CustomError,
+    errors::{CustomError, ErrorExitCode},
     get_user_input::UserInput,
     utilities::{find_executable_files, get_path},
 };
@@ -37,16 +38,21 @@ pub fn run() -> Result<()> {
             }
         };
         // create the pipes here
-        let mut previous_commands_std_reader: Option<PipeReader> = None;
+        let mut previous_commands_stdout_reader: Option<PipeReader> = None;
+        let mut previous_commands_stdin_reader = None;
+        let mut previous_external_child = None;
 
         while let Some(command) = commands.pop_front() {
-            let piping_command_stdout = !commands.is_empty();
-            let (stdin_reader, stdin_writer) = io::pipe()?;
+            let (stdin_reader, mut stdin_writer) = io::pipe()?;
             let (mut stderr_reader, stderr_writer) = io::pipe()?;
-            let (stdout_reader, stdout_writer) = io::pipe()?;
+            let (mut stdout_reader, stdout_writer) = io::pipe()?;
+            let pipe_command_stdout = !commands.is_empty() || !command.standard_out.is_standard();
 
-            previous_commands_std_reader = Some(stdout_reader);
-            let next_command_io = CommandIO::new(stdin_reader, stdout_writer, stderr_writer);
+            let mut next_command_io = CommandIO::new(
+                previous_commands_stdin_reader.take(),
+                stdout_writer,
+                stderr_writer,
+            );
 
             let command_result = match command.builtin_command {
                 BuiltinCommand::ChangeDirectory(arguments) => {
@@ -56,45 +62,47 @@ pub fn run() -> Result<()> {
                 BuiltinCommand::Exit => break 'repl_loop,
                 BuiltinCommand::PWD => pwd(next_command_io),
                 BuiltinCommand::Type(arguments) => builtin_type(arguments, &path, next_command_io),
-                // BuiltinCommand::NotFound(command_name, arguments) => {
-                //     if let Some(executable) =
-                //         find_executable_files(&command_name, &path, false)?.first()
-                //     {
-                //         let first_command_name = executable.file_name();
-                //         let first_command_name =
-                //             first_command_name.to_str().unwrap_or_default().to_owned();
-                //         let mut commands = vec![(first_command_name, arguments)];
-                //         let stdout = if matches!(command.standard_out, command::Output::Standard) {
-                //             None
-                //         } else {
-                //             Some(&mut stdout)
-                //         };
-                //         let stderr = if matches!(command.standard_error, command::Output::Standard)
-                //         {
-                //             None
-                //         } else {
-                //             Some(&mut errors)
-                //         };
+                BuiltinCommand::NotFound(command_name, arguments) => {
+                    if let Some(_executable) =
+                        find_executable_files(&command_name, &path, false)?.first()
+                    {
+                        let mut child = run_external(
+                            command_name,
+                            arguments,
+                            next_command_io,
+                            pipe_command_stdout,
+                            previous_external_child.take(),
+                        )?;
 
-                //         commands.append(&mut command.piped_commands);
-                //         run_external(commands, stdout, stderr)?;
-                //     } else {
-                //         let error = CustomError::CommandNotFound(command_string);
-                //         errors.push(format!("{error}"));
-                //     }
-                // }
+                        if commands.is_empty() {
+                            let exited_child = child.wait()?;
+                            if !exited_child.success() {
+                                Err(ErrorExitCode::new(exited_child.code().unwrap()))
+                            } else {
+                                Ok(())
+                            }
+                        } else {
+                            previous_external_child = Some(child);
+                            Ok(())
+                        }
+                    } else {
+                        writeln!(next_command_io.stderr, "{command_name}: Command not found")?;
+                        drop(next_command_io.stderr);
+                        Err(ErrorExitCode::new_const::<2>())
+                    }
+                }
                 _ => todo!(),
             };
 
             match command_result {
-                Ok(()) => (),
+                Ok(()) => previous_commands_stdout_reader = Some(stdout_reader),
                 Err(_code) => {
                     io::copy(&mut stderr_reader, &mut io::stderr())?;
                 }
             }
         }
 
-        if let Some(mut stdout) = previous_commands_std_reader {
+        if let Some(mut stdout) = previous_commands_stdout_reader {
             io::copy(&mut stdout, &mut io::stdout())?;
         }
 
