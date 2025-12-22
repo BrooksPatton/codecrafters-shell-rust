@@ -54,7 +54,7 @@ pub fn run() -> Result<()> {
                 }
                 BuiltinCommand::Echo(arguments) => echo(&arguments, next_command_io),
                 BuiltinCommand::Exit => break 'repl_loop,
-                // BuiltinCommand::PWD => pwd(&mut stdout, &mut errors)?,
+                BuiltinCommand::PWD => pwd(next_command_io),
                 // BuiltinCommand::Type(arguments) => {
                 //     builtin_type(arguments, &path, &mut stdout, &mut errors)?
                 // }
