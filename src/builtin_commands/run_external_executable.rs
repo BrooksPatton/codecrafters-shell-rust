@@ -1,20 +1,11 @@
-use std::{
-    io::{PipeReader, Read},
-    num::NonZero,
-    process::{self, Child, ChildStdout, Stdio},
-};
-
-use crate::{
-    command::{Command, CommandIO},
-    errors::ErrorExitCode,
-};
+use crate::{command::CommandIO, errors::ErrorExitCode};
+use std::process::{self, Child, Stdio};
 
 pub fn run_external(
     command_name: String,
     arguments: Vec<String>,
     command_io: CommandIO,
     is_last_child: bool,
-    stdin: Option<Stdio>,
     is_redirecting: bool,
 ) -> Result<Child, ErrorExitCode> {
     let mut command = process::Command::new(command_name);
@@ -23,7 +14,7 @@ pub fn run_external(
     command.stderr(Stdio::from(command_io.stderr));
     command.env("COLORTERM", "truecolor");
 
-    if let Some(stdio) = stdin {
+    if let Some(stdio) = command_io.stdin {
         command.stdin(stdio);
     }
 

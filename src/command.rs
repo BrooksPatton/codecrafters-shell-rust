@@ -5,7 +5,8 @@ use crate::{
 };
 use std::{
     collections::VecDeque,
-    io::{self, PipeReader, PipeWriter},
+    io::{PipeReader, PipeWriter},
+    process::Stdio,
 };
 
 #[derive(Debug, Clone)]
@@ -86,39 +87,6 @@ impl Command {
 
         Ok((arguments, standard_out_output, standard_error_output))
     }
-
-    fn extract_pipe(
-        input: Vec<String>,
-        stderr: &mut Vec<String>,
-    ) -> Result<(Vec<String>, Vec<(String, Vec<String>)>), CustomError> {
-        let mut arguments = vec![];
-        let mut arguments_iter = input.into_iter().peekable();
-        let mut piped_commands = vec![];
-
-        while let Some(argument) = arguments_iter.next() {
-            match argument.as_str() {
-                "|" => {
-                    let Some(command_name) = arguments_iter.next() else {
-                        stderr.push("When piping output, a command must be given".to_owned());
-                        break;
-                    };
-                    let mut pipe_arguments = vec![];
-
-                    loop {
-                        if arguments_iter.peek().is_some_and(|arg| arg != "|") {
-                            pipe_arguments.push(arguments_iter.next().unwrap());
-                        } else {
-                            break;
-                        }
-                    }
-                    piped_commands.push((command_name, pipe_arguments));
-                }
-                _ => arguments.push(argument),
-            }
-        }
-
-        Ok((arguments, piped_commands))
-    }
 }
 
 #[derive(Debug, Clone)]
@@ -154,13 +122,13 @@ pub fn parse_user_input(user_input: String) -> Result<VecDeque<Command>, CustomE
 /// we've only partially implemented it so far
 /// https://play.rust-lang.org/?version=stable&mode=debug&edition=2024&gist=99c818e83dfaa1204dc44cca93498bc1
 pub struct CommandIO {
-    pub stdin: Option<PipeReader>,
+    pub stdin: Option<Stdio>,
     pub stdout: PipeWriter,
     pub stderr: PipeWriter,
 }
 
 impl CommandIO {
-    pub fn new(stdin: Option<PipeReader>, stdout: PipeWriter, stderr: PipeWriter) -> Self {
+    pub fn new(stdin: Option<Stdio>, stdout: PipeWriter, stderr: PipeWriter) -> Self {
         Self {
             stdin,
             stdout,
