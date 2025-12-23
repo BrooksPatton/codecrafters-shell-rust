@@ -92,7 +92,7 @@ pub fn run() -> Result<()> {
                             Ok(())
                         }
                     } else {
-                        writeln!(next_command_io.stderr, "{command_name}: Command not found")?;
+                        writeln!(next_command_io.stderr, "{command_name}: command not found")?;
                         drop(next_command_io.stderr);
                         Err(ErrorExitCode::new_const::<2>())
                     }
