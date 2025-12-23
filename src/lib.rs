@@ -108,19 +108,21 @@ pub fn run() -> Result<()> {
                         env::set_var("?", exit_code.to_string());
                     }
 
-                    match &current_command.as_ref().unwrap().standard_error {
-                        command::Output::Standard => {
-                            io::copy(&mut stderr_reader, &mut io::stderr())?;
-                        }
-                        command::Output::CreateFile(filename) => {
-                            let mut reader = BufReader::new(stderr_reader);
-                            let mut buffer = reader.fill_buf()?;
-                            utilities::write_all_to_file(&mut buffer, filename)?;
-                        }
-                        command::Output::AppendFile(filename) => {
-                            let mut reader = BufReader::new(stderr_reader);
-                            let buffer = reader.fill_buf()?;
-                            utilities::append_all_to_file(&buffer, filename)?;
+                    if commands.is_empty() {
+                        match &current_command.as_ref().unwrap().standard_error {
+                            command::Output::Standard => {
+                                io::copy(&mut stderr_reader, &mut io::stderr())?;
+                            }
+                            command::Output::CreateFile(filename) => {
+                                let mut reader = BufReader::new(stderr_reader);
+                                let mut buffer = reader.fill_buf()?;
+                                utilities::write_all_to_file(&mut buffer, filename)?;
+                            }
+                            command::Output::AppendFile(filename) => {
+                                let mut reader = BufReader::new(stderr_reader);
+                                let buffer = reader.fill_buf()?;
+                                utilities::append_all_to_file(&buffer, filename)?;
+                            }
                         }
                     }
                 }
