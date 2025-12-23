@@ -14,7 +14,7 @@ use std::{
 use crate::{
     builtin_commands::{
         BuiltinCommand, builtin_type::builtin_type, change_directory::change_directory, echo::echo,
-        pwd::pwd, run_external_executable::run_external,
+        history::history, pwd::pwd, run_external_executable::run_external,
     },
     command::{Command, CommandIO, parse_user_input},
     errors::ErrorExitCode,
@@ -66,6 +66,7 @@ pub fn run() -> Result<()> {
                 }
                 BuiltinCommand::Echo(arguments) => echo(&arguments, next_command_io),
                 BuiltinCommand::Exit => break 'repl_loop,
+                BuiltinCommand::History => history(),
                 BuiltinCommand::PWD => pwd(next_command_io),
                 BuiltinCommand::Type(arguments) => builtin_type(arguments, &path, next_command_io),
                 BuiltinCommand::NotFound(command_name, arguments) => {

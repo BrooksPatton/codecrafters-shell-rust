@@ -1,6 +1,7 @@
 pub mod builtin_type;
 pub mod change_directory;
 pub mod echo;
+pub mod history;
 pub mod pwd;
 pub mod run_external_executable;
 
@@ -9,6 +10,7 @@ pub enum BuiltinCommand {
     ChangeDirectory(Vec<String>),
     Echo(Vec<String>),
     Exit,
+    History,
     PWD,
     Type(Vec<String>),
     NotFound(String, Vec<String>),
@@ -36,6 +38,7 @@ impl From<(String, Vec<String>)> for BuiltinCommand {
             "cd" => Self::ChangeDirectory(arguments),
             "echo" => Self::Echo(arguments),
             "exit" => Self::Exit,
+            "history" => Self::History,
             "pwd" => Self::PWD,
             "type" => Self::Type(arguments),
             _ => Self::NotFound(command.to_owned(), arguments),
