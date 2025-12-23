@@ -68,7 +68,7 @@ pub fn run() -> Result<()> {
                 }
                 BuiltinCommand::Echo(arguments) => echo(&arguments, next_command_io),
                 BuiltinCommand::Exit => break 'repl_loop,
-                BuiltinCommand::History => history.print(next_command_io),
+                BuiltinCommand::History(arguments) => history.print(next_command_io, arguments),
                 BuiltinCommand::PWD => pwd(next_command_io),
                 BuiltinCommand::Type(arguments) => builtin_type(arguments, &path, next_command_io),
                 BuiltinCommand::NotFound(command_name, arguments) => {

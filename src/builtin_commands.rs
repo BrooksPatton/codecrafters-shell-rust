@@ -12,7 +12,7 @@ pub enum BuiltinCommand {
     ChangeDirectory(Vec<String>),
     Echo(Vec<String>),
     Exit,
-    History,
+    History(Vec<String>),
     PWD,
     Type(Vec<String>),
     NotFound(String, Vec<String>),
@@ -40,7 +40,7 @@ impl From<(String, Vec<String>)> for BuiltinCommand {
             "cd" => Self::ChangeDirectory(arguments),
             "echo" => Self::Echo(arguments),
             "exit" => Self::Exit,
-            "history" => Self::History,
+            "history" => Self::History(arguments),
             "pwd" => Self::PWD,
             "type" => Self::Type(arguments),
             _ => Self::NotFound(command.to_owned(), arguments),
@@ -67,7 +67,10 @@ impl Display for BuiltinCommand {
                 format!("echo {args}")
             }
             BuiltinCommand::Exit => format!("exit"),
-            BuiltinCommand::History => format!("history"),
+            BuiltinCommand::History(args) => {
+                let args = args.join(" ");
+                format!("history {args}")
+            }
             BuiltinCommand::PWD => format!("pwd"),
             BuiltinCommand::Type(args) => {
                 let command = args.first().cloned().unwrap_or_default();
