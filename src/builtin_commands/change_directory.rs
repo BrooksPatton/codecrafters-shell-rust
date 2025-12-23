@@ -28,7 +28,10 @@ pub fn change_directory(
         }
     } else {
         let target_path = target_path.to_string_lossy().into_owned();
-        writeln!(command_io_in.stderr, "{target_path} is not a directory")?;
+        writeln!(
+            command_io_in.stderr,
+            "cd: {target_path}: No such file or directory"
+        )?;
         return Err(ErrorExitCode::new_const::<3>());
     }
 
