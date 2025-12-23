@@ -82,33 +82,15 @@ pub fn find_executable_files(
     Ok(executable_files)
 }
 
-pub fn write_all_to_file(messages: &[String], filename: &str) -> Result<()> {
+pub fn write_all_to_file(buffer: &[u8], filename: &str) -> Result<()> {
     let file_path = Path::new(filename);
     let mut file = std::fs::File::options()
         .write(true)
         .truncate(true)
         .create(true)
         .open(file_path)?;
-    let mut wrote_line = false;
 
-    messages
-        .iter()
-        .filter_map(|message| {
-            if message.is_empty() {
-                None
-            } else {
-                Some(message.trim())
-            }
-        })
-        .try_for_each(|message| {
-            wrote_line = true;
-            file.write_all(message.as_bytes())
-        })?;
-
-    if wrote_line {
-        file.write(b"\n")?;
-    }
-
+    file.write_all(buffer)?;
     Ok(())
 }
 

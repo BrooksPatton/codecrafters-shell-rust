@@ -6,10 +6,11 @@ pub mod input_parser;
 pub mod utilities;
 
 use std::{
+    clone,
     fs::exists,
     io::{self, BufRead, BufReader, PipeReader, Read, Write},
     num::NonZero,
-    process,
+    process::{self, Child, Stdio},
 };
 
 use crate::{
@@ -17,7 +18,7 @@ use crate::{
         BuiltinCommand, builtin_type::builtin_type, change_directory::change_directory, echo::echo,
         pwd::pwd, run_external_executable::run_external,
     },
-    command::{CommandIO, parse_user_input},
+    command::{Command, CommandIO, parse_user_input},
     errors::{CustomError, ErrorExitCode},
     get_user_input::UserInput,
     utilities::{find_executable_files, get_path},
@@ -40,20 +41,21 @@ pub fn run() -> Result<()> {
         // create the pipes here
         let mut previous_commands_stdout_reader: Option<PipeReader> = None;
         let mut previous_commands_stdin_reader = None;
-        let mut previous_external_child = None;
+        let mut previous_external_child: Option<Child> = None;
+        let mut last_command: Option<Command> = None;
 
         while let Some(command) = commands.pop_front() {
+            let current_command = Some(command.clone());
+
             let (stdin_reader, mut stdin_writer) = io::pipe()?;
             let (mut stderr_reader, stderr_writer) = io::pipe()?;
             let (mut stdout_reader, stdout_writer) = io::pipe()?;
             let pipe_command_stdout = !commands.is_empty() || !command.standard_out.is_standard();
-
             let mut next_command_io = CommandIO::new(
                 previous_commands_stdin_reader.take(),
                 stdout_writer,
                 stderr_writer,
             );
-
             let command_result = match command.builtin_command {
                 BuiltinCommand::ChangeDirectory(arguments) => {
                     change_directory(&arguments, next_command_io)
@@ -66,12 +68,27 @@ pub fn run() -> Result<()> {
                     if let Some(_executable) =
                         find_executable_files(&command_name, &path, false)?.first()
                     {
+                        let external_command_stdin = if let Some(unwrapped_last_command) =
+                            last_command.as_ref()
+                        {
+                            if unwrapped_last_command.builtin_command.is_builtin() {
+                                Some(Stdio::from(previous_commands_stdout_reader.take().unwrap()))
+                            } else {
+                                let Some(last_child) = previous_external_child.take() else {
+                                    unreachable!();
+                                };
+                                Some(Stdio::from(last_child.stdout.unwrap()))
+                            }
+                        } else {
+                            None
+                        };
                         let mut child = run_external(
                             command_name,
                             arguments,
                             next_command_io,
-                            pipe_command_stdout,
-                            previous_external_child.take(),
+                            commands.is_empty(),
+                            external_command_stdin,
+                            !command.standard_out.is_standard(),
                         )?;
 
                         if commands.is_empty() {
@@ -100,10 +117,31 @@ pub fn run() -> Result<()> {
                     io::copy(&mut stderr_reader, &mut io::stderr())?;
                 }
             }
+
+            last_command = current_command;
         }
 
         if let Some(mut stdout) = previous_commands_stdout_reader {
-            io::copy(&mut stdout, &mut io::stdout())?;
+            if let Some(last_command) = last_command {
+                match last_command.standard_out {
+                    command::Output::Standard => {
+                        io::copy(&mut stdout, &mut io::stdout())?;
+                    }
+                    command::Output::CreateFile(filename) => {
+                        let mut reader = BufReader::new(stdout);
+                        let mut buffer = reader.fill_buf()?;
+                        utilities::write_all_to_file(&mut buffer, &filename)?;
+                    }
+                    command::Output::AppendFile(filename) => {
+                        let buffer = BufReader::new(stdout);
+                        let lines = buffer
+                            .lines()
+                            .filter_map(|line| line.ok())
+                            .collect::<Vec<String>>();
+                        utilities::append_all_to_file(&lines, &filename)?;
+                    }
+                }
+            };
         }
 
         //     match command.builtin_command {

@@ -13,29 +13,26 @@ pub fn run_external(
     command_name: String,
     arguments: Vec<String>,
     command_io: CommandIO,
-    is_piping_stdout: bool,
-    previous_child: Option<Child>,
+    is_last_child: bool,
+    stdin: Option<Stdio>,
+    is_redirecting: bool,
 ) -> Result<Child, ErrorExitCode> {
-    println!("about to run {command_name}");
     let mut command = process::Command::new(command_name);
 
     command.args(arguments);
     command.stderr(Stdio::from(command_io.stderr));
     command.env("COLORTERM", "truecolor");
 
-    if is_piping_stdout {
-        command.stdout(Stdio::piped());
+    if let Some(stdio) = stdin {
+        command.stdin(stdio);
     }
 
-    if let Some(previous_child) = previous_child {
-        println!("have a previous child");
-        if let Some(stdout) = previous_child.stdout {
-            println!("previous child has a stdout");
-            command.stdin(Stdio::from(stdout));
-        }
+    if !is_last_child {
+        command.stdout(Stdio::piped());
+    } else if is_redirecting {
+        command.stdout(Stdio::from(command_io.stdout));
     }
 
     let child = command.spawn()?;
-    println!("command spawned");
     Ok(child)
 }

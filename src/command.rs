@@ -8,7 +8,7 @@ use std::{
     io::{self, PipeReader, PipeWriter},
 };
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Command {
     pub builtin_command: BuiltinCommand,
     pub standard_out: Output,
@@ -121,7 +121,7 @@ impl Command {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Output {
     Standard,
     CreateFile(String),

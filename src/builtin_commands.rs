@@ -4,7 +4,7 @@ pub mod echo;
 pub mod pwd;
 pub mod run_external_executable;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum BuiltinCommand {
     ChangeDirectory(Vec<String>),
     Echo(Vec<String>),
@@ -23,6 +23,10 @@ impl BuiltinCommand {
             .filter(|command| command.contains(partial))
             .map(ToString::to_string)
             .collect()
+    }
+
+    pub fn is_builtin(&self) -> bool {
+        !matches!(self, Self::NotFound(_, _))
     }
 }
 
