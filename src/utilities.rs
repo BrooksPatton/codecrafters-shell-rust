@@ -94,25 +94,14 @@ pub fn write_all_to_file(buffer: &[u8], filename: &str) -> Result<()> {
     Ok(())
 }
 
-pub fn append_all_to_file(messages: &[String], filename: &str) -> Result<()> {
-    let filtered_messages = messages
-        .iter()
-        .filter(|message| !message.is_empty())
-        .collect::<Vec<&String>>();
+pub fn append_all_to_file(buffer: &[u8], filename: &str) -> Result<()> {
     let file_path = Path::new(filename);
     let mut file = std::fs::File::options()
         .create(true)
         .append(true)
         .open(file_path)?;
 
-    filtered_messages
-        .iter()
-        .map(|message| message.trim_end())
-        .try_for_each(|message| file.write_all(message.as_bytes()))?;
-
-    if !filtered_messages.is_empty() {
-        file.write(b"\n")?;
-    }
+    file.write_all(buffer)?;
 
     Ok(())
 }

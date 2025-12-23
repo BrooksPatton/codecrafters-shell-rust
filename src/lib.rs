@@ -120,12 +120,9 @@ pub fn run() -> Result<()> {
                             utilities::write_all_to_file(&mut buffer, filename)?;
                         }
                         command::Output::AppendFile(filename) => {
-                            let buffer = BufReader::new(stderr_reader);
-                            let lines = buffer
-                                .lines()
-                                .filter_map(|line| line.ok())
-                                .collect::<Vec<String>>();
-                            utilities::append_all_to_file(&lines, filename)?;
+                            let mut reader = BufReader::new(stderr_reader);
+                            let buffer = reader.fill_buf()?;
+                            utilities::append_all_to_file(&buffer, filename)?;
                         }
                     }
 
@@ -139,12 +136,9 @@ pub fn run() -> Result<()> {
                             utilities::write_all_to_file(&mut buffer, filename)?;
                         }
                         command::Output::AppendFile(filename) => {
-                            let buffer = BufReader::new(stdout_reader);
-                            let lines = buffer
-                                .lines()
-                                .filter_map(|line| line.ok())
-                                .collect::<Vec<String>>();
-                            utilities::append_all_to_file(&lines, filename)?;
+                            let mut reader = BufReader::new(stdout_reader);
+                            let buffer = reader.fill_buf()?;
+                            utilities::append_all_to_file(&buffer, filename)?;
                         }
                     }
                 }
@@ -165,12 +159,9 @@ pub fn run() -> Result<()> {
                         utilities::write_all_to_file(&mut buffer, &filename)?;
                     }
                     command::Output::AppendFile(filename) => {
-                        let buffer = BufReader::new(stdout);
-                        let lines = buffer
-                            .lines()
-                            .filter_map(|line| line.ok())
-                            .collect::<Vec<String>>();
-                        utilities::append_all_to_file(&lines, &filename)?;
+                        let mut reader = BufReader::new(stdout);
+                        let buffer = reader.fill_buf()?;
+                        utilities::append_all_to_file(&buffer, &filename)?;
                     }
                 }
             };
