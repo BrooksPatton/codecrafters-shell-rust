@@ -5,16 +5,10 @@ mod get_user_input;
 pub mod input_parser;
 pub mod utilities;
 
-use std::{
-    env,
-    io::{self, BufRead, BufReader, PipeReader, Write},
-    process::{Child, Stdio},
-};
-
 use crate::{
     builtin_commands::{
         BuiltinCommand, builtin_type::builtin_type, change_directory::change_directory, echo::echo,
-        history::history, pwd::pwd, run_external_executable::run_external,
+        history::History, pwd::pwd, run_external_executable::run_external,
     },
     command::{Command, CommandIO, parse_user_input},
     errors::ErrorExitCode,
@@ -22,10 +16,16 @@ use crate::{
     utilities::{find_executable_files, get_path},
 };
 use anyhow::{Context, Result};
+use std::{
+    env,
+    io::{self, BufRead, BufReader, PipeReader, Write},
+    process::{Child, Stdio},
+};
 
 pub fn run() -> Result<()> {
     let path = get_path().context("Getting path")?;
     let user_input = UserInput::new("$ ");
+    let mut history = History::new();
 
     'repl_loop: loop {
         let user_input_line = user_input.readline()?;
@@ -42,7 +42,9 @@ pub fn run() -> Result<()> {
         let mut last_command: Option<Command> = None;
 
         while let Some(command) = commands.pop_front() {
-            let current_command = Some(command.clone());
+            let current_command = command.clone();
+
+            history.add(&command);
 
             let (mut stderr_reader, stderr_writer) = io::pipe()?;
             let (mut stdout_reader, stdout_writer) = io::pipe()?;
@@ -66,7 +68,7 @@ pub fn run() -> Result<()> {
                 }
                 BuiltinCommand::Echo(arguments) => echo(&arguments, next_command_io),
                 BuiltinCommand::Exit => break 'repl_loop,
-                BuiltinCommand::History => history(),
+                BuiltinCommand::History => history.print(next_command_io),
                 BuiltinCommand::PWD => pwd(next_command_io),
                 BuiltinCommand::Type(arguments) => builtin_type(arguments, &path, next_command_io),
                 BuiltinCommand::NotFound(command_name, arguments) => {
@@ -111,7 +113,7 @@ pub fn run() -> Result<()> {
                     }
 
                     if commands.is_empty() {
-                        match &current_command.as_ref().unwrap().standard_error {
+                        match &current_command.standard_error {
                             command::Output::Standard => {
                                 io::copy(&mut stderr_reader, &mut io::stderr())?;
                             }
@@ -130,7 +132,7 @@ pub fn run() -> Result<()> {
                 }
                 Err(code) => {
                     unsafe { env::set_var("?", code.to_string()) }
-                    match &current_command.as_ref().unwrap().standard_error {
+                    match &current_command.standard_error {
                         command::Output::Standard => {
                             io::copy(&mut stderr_reader, &mut io::stderr())?;
                         }
@@ -146,7 +148,7 @@ pub fn run() -> Result<()> {
                         }
                     }
 
-                    match &current_command.as_ref().unwrap().standard_out {
+                    match &current_command.standard_out {
                         command::Output::Standard => {
                             io::copy(&mut stdout_reader, &mut io::stderr())?;
                         }
@@ -164,7 +166,7 @@ pub fn run() -> Result<()> {
                 }
             }
 
-            last_command = current_command;
+            last_command = Some(current_command);
         }
 
         if let Some(mut stdout) = previous_commands_stdout_reader {

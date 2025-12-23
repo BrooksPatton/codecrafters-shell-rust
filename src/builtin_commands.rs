@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 pub mod builtin_type;
 pub mod change_directory;
 pub mod echo;
@@ -50,5 +52,33 @@ impl From<String> for BuiltinCommand {
     fn from(command: String) -> Self {
         let arguments = vec![];
         Self::from((command, arguments))
+    }
+}
+
+impl Display for BuiltinCommand {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let output = match self {
+            BuiltinCommand::ChangeDirectory(args) => {
+                let path = args.first().cloned().unwrap_or_default();
+                format!("cd {path}")
+            }
+            BuiltinCommand::Echo(args) => {
+                let args = args.join(" ");
+                format!("echo {args}")
+            }
+            BuiltinCommand::Exit => format!("exit"),
+            BuiltinCommand::History => format!("history"),
+            BuiltinCommand::PWD => format!("pwd"),
+            BuiltinCommand::Type(args) => {
+                let command = args.first().cloned().unwrap_or_default();
+                format!("type {command}")
+            }
+            BuiltinCommand::NotFound(command_name, args) => {
+                let args = args.join(" ");
+                format!("{command_name} {args}")
+            }
+        };
+
+        write!(f, "{output}")
     }
 }
