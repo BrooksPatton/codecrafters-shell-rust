@@ -3,11 +3,7 @@ use crate::{
     errors::CustomError,
     input_parser::{input_for_one_command, parse_input},
 };
-use std::{
-    collections::VecDeque,
-    io::{PipeReader, PipeWriter},
-    process::Stdio,
-};
+use std::{collections::VecDeque, io::PipeWriter, process::Stdio};
 
 #[derive(Debug, Clone)]
 pub struct Command {

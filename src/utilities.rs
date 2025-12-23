@@ -1,4 +1,4 @@
-use crate::{builtin_commands::BuiltinCommand, command::Command};
+use crate::builtin_commands::BuiltinCommand;
 use anyhow::{Context, Result, bail};
 pub use std::process::exit;
 use std::{

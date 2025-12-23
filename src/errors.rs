@@ -4,14 +4,8 @@ use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum CustomError {
-    #[error("{0}: command not found")]
-    CommandNotFound(String),
     #[error("Error: missing filename")]
     FilenameMissing,
-    #[error("Error: {0}")]
-    Message(String),
-    #[error("Error: {0} doesn't exist")]
-    DirectoryOrFileNotFound(String),
 }
 
 /// Special thanks to Justus_Fluegel on Twitch for helping with errors
@@ -37,6 +31,6 @@ impl From<std::io::Error> for ErrorExitCode {
 
 impl Display for ErrorExitCode {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        writeln!(f, "There was an error")
+        writeln!(f, "{}", self.0)
     }
 }

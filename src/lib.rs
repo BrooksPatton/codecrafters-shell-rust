@@ -6,11 +6,9 @@ pub mod input_parser;
 pub mod utilities;
 
 use std::{
-    clone,
-    fs::exists,
-    io::{self, BufRead, BufReader, PipeReader, Read, Write},
-    num::NonZero,
-    process::{self, Child, Stdio},
+    env,
+    io::{self, BufRead, BufReader, PipeReader, Write},
+    process::{Child, Stdio},
 };
 
 use crate::{
@@ -19,7 +17,7 @@ use crate::{
         pwd::pwd, run_external_executable::run_external,
     },
     command::{Command, CommandIO, parse_user_input},
-    errors::{CustomError, ErrorExitCode},
+    errors::ErrorExitCode,
     get_user_input::UserInput,
     utilities::{find_executable_files, get_path},
 };
@@ -40,17 +38,14 @@ pub fn run() -> Result<()> {
         };
         // create the pipes here
         let mut previous_commands_stdout_reader: Option<PipeReader> = None;
-        let mut previous_commands_stdin_reader: Option<PipeReader> = None;
         let mut previous_external_child: Option<Child> = None;
         let mut last_command: Option<Command> = None;
 
         while let Some(command) = commands.pop_front() {
             let current_command = Some(command.clone());
 
-            let (stdin_reader, mut stdin_writer) = io::pipe()?;
             let (mut stderr_reader, stderr_writer) = io::pipe()?;
-            let (mut stdout_reader, stdout_writer) = io::pipe()?;
-            let pipe_command_stdout = !commands.is_empty() || !command.standard_out.is_standard();
+            let (stdout_reader, stdout_writer) = io::pipe()?;
             let command_io_stdin = if let Some(unwrapped_last_command) = last_command.as_ref() {
                 if unwrapped_last_command.builtin_command.is_builtin() {
                     Some(Stdio::from(previous_commands_stdout_reader.take().unwrap()))
@@ -102,29 +97,38 @@ pub fn run() -> Result<()> {
                         Err(ErrorExitCode::new_const::<2>())
                     }
                 }
-                _ => todo!(),
             };
 
             match command_result {
-                Ok(()) => previous_commands_stdout_reader = Some(stdout_reader),
-                Err(_code) => match &current_command.as_ref().unwrap().standard_error {
-                    command::Output::Standard => {
-                        io::copy(&mut stderr_reader, &mut io::stderr())?;
+                Ok(()) => {
+                    let exit_code = 0;
+
+                    previous_commands_stdout_reader = Some(stdout_reader);
+                    unsafe {
+                        env::set_var("?", exit_code.to_string());
                     }
-                    command::Output::CreateFile(filename) => {
-                        let mut reader = BufReader::new(stderr_reader);
-                        let mut buffer = reader.fill_buf()?;
-                        utilities::write_all_to_file(&mut buffer, filename)?;
+                }
+                Err(code) => {
+                    unsafe { env::set_var("?", code.to_string()) }
+                    match &current_command.as_ref().unwrap().standard_error {
+                        command::Output::Standard => {
+                            io::copy(&mut stderr_reader, &mut io::stderr())?;
+                        }
+                        command::Output::CreateFile(filename) => {
+                            let mut reader = BufReader::new(stderr_reader);
+                            let mut buffer = reader.fill_buf()?;
+                            utilities::write_all_to_file(&mut buffer, filename)?;
+                        }
+                        command::Output::AppendFile(filename) => {
+                            let buffer = BufReader::new(stderr_reader);
+                            let lines = buffer
+                                .lines()
+                                .filter_map(|line| line.ok())
+                                .collect::<Vec<String>>();
+                            utilities::append_all_to_file(&lines, filename)?;
+                        }
                     }
-                    command::Output::AppendFile(filename) => {
-                        let buffer = BufReader::new(stderr_reader);
-                        let lines = buffer
-                            .lines()
-                            .filter_map(|line| line.ok())
-                            .collect::<Vec<String>>();
-                        utilities::append_all_to_file(&lines, filename)?;
-                    }
-                },
+                }
             }
 
             last_command = current_command;
