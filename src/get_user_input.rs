@@ -1,5 +1,5 @@
 use crate::{
-    builtin_commands::BuiltinCommand,
+    builtin_commands::{BuiltinCommand, history::History},
     utilities::{
         are_all_items_same_length, calculate_longest_common_prefix, find_executable_files, get_path,
     },
@@ -24,7 +24,7 @@ impl UserInput {
         Self { ps1, term }
     }
 
-    pub fn readline(&self) -> Result<String> {
+    pub fn readline(&mut self, history: &mut History) -> Result<String> {
         let mut in_command = true;
         let mut user_input = String::new();
         let mut autocomplete_bell = false;
@@ -40,10 +40,21 @@ impl UserInput {
                 Key::UnknownEscSeq(_items) => todo!(),
                 Key::ArrowLeft => todo!(),
                 Key::ArrowRight => todo!(),
-                Key::ArrowUp => todo!(),
+                Key::ArrowUp => {
+                    let Some(previous_prompt) = history.get_previous_prompt() else {
+                        continue;
+                    };
+                    self.term.clear_line()?;
+                    self.print_prompt()?;
+                    user_input = previous_prompt.to_owned();
+
+                    self.term.write(previous_prompt.as_bytes())?;
+                    self.term.flush()?;
+                }
                 Key::ArrowDown => todo!(),
                 Key::Enter => {
                     self.term.write_line("")?;
+                    history.reset_lookback();
                     return Ok(user_input);
                 }
                 Key::Backspace => {

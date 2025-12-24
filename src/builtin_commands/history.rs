@@ -8,13 +8,18 @@ use crate::{
 #[derive(Debug)]
 pub struct History {
     pub commands: Vec<String>,
+    lookback_index: usize,
 }
 
 impl History {
     pub fn new() -> Self {
         let commands = vec![];
+        let lookback_index = 0;
 
-        Self { commands }
+        Self {
+            commands,
+            lookback_index,
+        }
     }
 
     pub fn add(&mut self, command: &Command) {
@@ -52,5 +57,18 @@ impl History {
         }
 
         Ok(())
+    }
+
+    pub fn get_previous_prompt(&mut self) -> Option<&str> {
+        self.lookback_index += 1;
+        let index = self.commands.len().checked_sub(self.lookback_index)?;
+
+        self.commands
+            .get(index)
+            .map(|command_prompt| command_prompt.as_str())
+    }
+
+    pub fn reset_lookback(&mut self) {
+        self.lookback_index = 0;
     }
 }

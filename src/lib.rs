@@ -24,11 +24,11 @@ use std::{
 
 pub fn run() -> Result<()> {
     let path = get_path().context("Getting path")?;
-    let user_input = UserInput::new("$ ");
     let mut history = History::new();
+    let mut user_input = UserInput::new("$ ");
 
     'repl_loop: loop {
-        let user_input_line = user_input.readline()?;
+        let user_input_line = user_input.readline(&mut history)?;
         let mut commands = match parse_user_input(user_input_line) {
             Ok(commands) => commands,
             Err(error) => {
