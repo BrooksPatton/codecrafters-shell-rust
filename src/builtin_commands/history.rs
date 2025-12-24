@@ -242,8 +242,6 @@ impl History {
             writeln!(history_file_writer, "{command}")?;
         }
 
-        writeln!(history_file_writer, "")?;
-
         Ok(())
     }
 }
