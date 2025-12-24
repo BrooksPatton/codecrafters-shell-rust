@@ -224,9 +224,7 @@ impl History {
             }
         };
         let mut history_file_writer = BufWriter::new(history_file);
-        let _end_position = history_file_writer
-            .seek(std::io::SeekFrom::End(-1))
-            .unwrap();
+        history_file_writer.seek(std::io::SeekFrom::End(0)).unwrap();
 
         let mut commands = VecDeque::new();
         let mut commands_iter = self.commands.iter().rev();
