@@ -1,4 +1,10 @@
-use std::{io::Write, usize};
+use std::{
+    collections::VecDeque,
+    fs,
+    io::{BufRead, BufReader, Write},
+    path::Path,
+    usize,
+};
 
 use crate::{
     command::{Command, CommandIO},
@@ -28,28 +34,22 @@ impl History {
         self.commands.push(history_item);
     }
 
-    pub fn print(
-        &self,
-        mut command_io: CommandIO,
-        arguments: Vec<String>,
-    ) -> Result<(), ErrorExitCode> {
-        let how_many_to_show = if let Some(count) = arguments.first() {
-            match count.parse::<usize>() {
-                Ok(count) => count,
-                Err(error) => {
-                    writeln!(command_io.stderr, "{error:?}")?;
-                    return Err(ErrorExitCode::new_const::<1>());
-                }
-            }
-        } else {
-            self.commands.len()
-        };
+    fn print(&self, mut command_io: CommandIO) -> Result<(), ErrorExitCode> {
+        for (index, command) in self.commands.iter().enumerate() {
+            let history_number = index + 1;
 
+            writeln!(command_io.stdout, "\t{history_number}  {command}")?;
+        }
+
+        Ok(())
+    }
+
+    fn print_n(&self, mut command_io: CommandIO, count: usize) -> Result<(), ErrorExitCode> {
         for (index, command) in self
             .commands
             .iter()
             .enumerate()
-            .skip(self.commands.len() - how_many_to_show)
+            .skip(self.commands.len() - count)
         {
             let history_number = index + 1;
 
@@ -79,5 +79,66 @@ impl History {
 
     pub fn reset_lookback(&mut self) {
         self.lookback_index = 0;
+    }
+
+    pub fn controller(
+        &mut self,
+        mut command_io: CommandIO,
+        mut arguments: VecDeque<String>,
+    ) -> Result<(), ErrorExitCode> {
+        let Some(first_argument) = arguments.pop_front() else {
+            return self.print(command_io);
+        };
+
+        if let Some(count) = first_argument.as_str().parse::<usize>().ok() {
+            return self.print_n(command_io, count);
+        }
+
+        if first_argument == "-r" {
+            let Some(filename) = arguments.pop_front() else {
+                writeln!(command_io.stderr, "Error, history -r requires a path")?;
+                return Err(ErrorExitCode::new_const::<1>());
+            };
+
+            return self.load_history_from_file(filename, command_io);
+        }
+
+        writeln!(command_io.stderr, "Error: incorrect usage of history.")?;
+        writeln!(command_io.stderr, "history [count]|[-r path]")?;
+        Err(ErrorExitCode::new_const::<5>())
+    }
+
+    fn load_history_from_file(
+        &mut self,
+        filename: String,
+        mut command_io: CommandIO,
+    ) -> Result<(), ErrorExitCode> {
+        let path = Path::new(&filename);
+
+        if !path.is_file() {
+            writeln!(command_io.stderr, "Error: {filename} is not a valid file")?;
+            return Err(ErrorExitCode::new_const::<2>());
+        }
+
+        let history_file = match fs::File::options().read(true).open(path) {
+            Ok(file) => file,
+            Err(error) => {
+                writeln!(command_io.stderr, "{error:?}")?;
+                return Err(ErrorExitCode::new_const::<3>());
+            }
+        };
+        let history_file_reader = BufReader::new(history_file);
+
+        for history_command in history_file_reader.lines() {
+            match history_command {
+                Ok(command) => self.commands.push(command),
+                Err(error) => {
+                    writeln!(command_io.stderr, "{error:?}")?;
+                    return Err(ErrorExitCode::new_const::<4>());
+                }
+            }
+        }
+
+        Ok(())
     }
 }
