@@ -28,7 +28,7 @@ impl History {
                     bail!("no home directory present");
                 };
 
-                Path::new(&home_dir).to_path_buf()
+                Path::new(&home_dir).join(".cc_history")
             }
             Err(error) => bail!(error),
         };
