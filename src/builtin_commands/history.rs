@@ -23,7 +23,7 @@ impl History {
     }
 
     pub fn add(&mut self, command: &Command) {
-        let history_item = command.builtin_command.to_string();
+        let history_item = command.builtin_command.to_string().trim().to_owned();
 
         self.commands.push(history_item);
     }
