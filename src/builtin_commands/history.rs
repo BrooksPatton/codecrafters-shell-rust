@@ -2,7 +2,7 @@ use std::{
     collections::VecDeque,
     env, fs,
     io::{BufRead, BufReader, BufWriter, Seek, Write},
-    path::Path,
+    path::{Path, PathBuf},
     usize,
 };
 
@@ -21,17 +21,7 @@ pub struct History {
 
 impl History {
     pub fn new() -> anyhow::Result<Self> {
-        let histfile_path = match env::var("HISTFILE") {
-            Ok(histfile) => Path::new(&histfile).to_path_buf(),
-            Err(env::VarError::NotPresent) => {
-                let Some(home_dir) = env::home_dir() else {
-                    bail!("no home directory present");
-                };
-
-                Path::new(&home_dir).join(".cc_history")
-            }
-            Err(error) => bail!(error),
-        };
+        let histfile_path = Self::get_history_file_path()?;
 
         if histfile_path.is_dir() {
             bail!("history file cannot be a directory");
@@ -143,7 +133,7 @@ impl History {
                     return Err(ErrorExitCode::new_const::<9>());
                 };
 
-                self.write_history_to_file(command_io, filename)
+                self.write_history_to_file(command_io, Path::new(&filename))
             }
             "-a" => {
                 let Some(filename) = arguments.pop_front() else {
@@ -195,13 +185,11 @@ impl History {
         Ok(())
     }
 
-    fn write_history_to_file(
+    pub fn write_history_to_file(
         &self,
         mut command_io: CommandIO,
-        filename: String,
+        path: &Path,
     ) -> Result<(), ErrorExitCode> {
-        let path = Path::new(&filename);
-
         if path.is_dir() {
             writeln!(
                 command_io.stderr,
@@ -277,5 +265,21 @@ impl History {
         }
 
         Ok(())
+    }
+
+    pub fn get_history_file_path() -> anyhow::Result<PathBuf> {
+        let path = match env::var("HISTFILE") {
+            Ok(histfile) => Path::new(&histfile).to_path_buf(),
+            Err(env::VarError::NotPresent) => {
+                let Some(home_dir) = env::home_dir() else {
+                    bail!("no home directory present");
+                };
+
+                Path::new(&home_dir).join(".cc_history")
+            }
+            Err(error) => bail!(error),
+        };
+
+        Ok(path)
     }
 }

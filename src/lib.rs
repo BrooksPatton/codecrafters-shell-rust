@@ -67,7 +67,11 @@ pub fn run() -> Result<()> {
                     change_directory(&arguments, next_command_io)
                 }
                 BuiltinCommand::Echo(arguments) => echo(&arguments, next_command_io),
-                BuiltinCommand::Exit => break 'repl_loop,
+                BuiltinCommand::Exit => {
+                    let history_file_path = History::get_history_file_path()?;
+                    history.write_history_to_file(next_command_io, &history_file_path)?;
+                    break 'repl_loop;
+                }
                 BuiltinCommand::History(arguments) => {
                     history.controller(next_command_io, arguments.into())
                 }
