@@ -1,7 +1,7 @@
 use std::{
     collections::VecDeque,
     fs,
-    io::{BufRead, BufReader, Write},
+    io::{BufRead, BufReader, BufWriter, Seek, Write},
     path::Path,
     usize,
 };
@@ -111,6 +111,14 @@ impl History {
 
                 self.write_history_to_file(command_io, filename)
             }
+            "-a" => {
+                let Some(filename) = arguments.pop_front() else {
+                    writeln!(command_io.stderr, "Error: history -a requries a path")?;
+                    return Err(ErrorExitCode::new_const::<12>());
+                };
+
+                self.append_history_to_file(command_io, filename)
+            }
             _ => {
                 writeln!(command_io.stderr, "Error: Unkown option {first_argument}")?;
                 writeln!(command_io.stderr, "history [count]|[-r path]")?;
@@ -184,6 +192,59 @@ impl History {
         for command in self.commands.iter() {
             writeln!(file, "{command}")?;
         }
+
+        Ok(())
+    }
+
+    fn append_history_to_file(
+        &self,
+        mut command_io: CommandIO,
+        filename: String,
+    ) -> Result<(), ErrorExitCode> {
+        let path = Path::new(&filename);
+
+        if !path.is_file() {
+            writeln!(
+                command_io.stderr,
+                "Error: when appending history, given filename must exist and be a file"
+            )?;
+            return Err(ErrorExitCode::new_const::<10>());
+        }
+
+        let history_file = match fs::File::options()
+            .read(true)
+            .write(true)
+            .create(true)
+            .open(path)
+        {
+            Ok(file) => file,
+            Err(error) => {
+                writeln!(command_io.stderr, "{error:?}")?;
+                return Err(ErrorExitCode::new_const::<11>());
+            }
+        };
+        let mut history_file_writer = BufWriter::new(history_file);
+        let _end_position = history_file_writer
+            .seek(std::io::SeekFrom::End(-1))
+            .unwrap();
+
+        let mut commands = VecDeque::new();
+        let mut commands_iter = self.commands.iter().rev();
+
+        commands.push_front(commands_iter.next().unwrap());
+
+        for command in commands_iter {
+            if command.starts_with("history -a") {
+                break;
+            }
+            commands.push_front(command);
+        }
+
+        for command in commands {
+            writeln!(history_file_writer, "{command}")?;
+        }
+
+        writeln!(history_file_writer, "")?;
 
         Ok(())
     }
