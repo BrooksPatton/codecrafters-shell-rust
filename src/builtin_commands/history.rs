@@ -1,10 +1,12 @@
 use std::{
     collections::VecDeque,
-    fs,
+    env, fs,
     io::{BufRead, BufReader, BufWriter, Seek, Write},
     path::Path,
     usize,
 };
+
+use anyhow::bail;
 
 use crate::{
     command::{Command, CommandIO},
@@ -18,14 +20,46 @@ pub struct History {
 }
 
 impl History {
-    pub fn new() -> Self {
-        let commands = vec![];
-        let lookback_index = 0;
+    pub fn new() -> anyhow::Result<Self> {
+        let histfile_path = match env::var("HISTFILE") {
+            Ok(histfile) => Path::new(&histfile).to_path_buf(),
+            Err(env::VarError::NotPresent) => {
+                let Some(home_dir) = env::home_dir() else {
+                    bail!("no home directory present");
+                };
 
-        Self {
+                Path::new(&home_dir).to_path_buf()
+            }
+            Err(error) => bail!(error),
+        };
+
+        if histfile_path.is_dir() {
+            bail!("history file cannot be a directory");
+        }
+
+        let history_file = fs::File::options()
+            .read(true)
+            .write(true)
+            .create(true)
+            .open(histfile_path)?;
+
+        let mut commands = vec![];
+        let lookback_index = 0;
+        let history_file_reader = BufReader::new(history_file);
+
+        for history_file_command in history_file_reader.lines() {
+            let command = history_file_command?.trim().to_owned();
+
+            if command.is_empty() {
+                continue;
+            }
+            commands.push(command);
+        }
+
+        Ok(Self {
             commands,
             lookback_index,
-        }
+        })
     }
 
     pub fn add(&mut self, command: &Command) {

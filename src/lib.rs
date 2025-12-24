@@ -24,7 +24,7 @@ use std::{
 
 pub fn run() -> Result<()> {
     let path = get_path().context("Getting path")?;
-    let mut history = History::new();
+    let mut history = History::new()?;
     let mut user_input = UserInput::new("$ ");
 
     'repl_loop: loop {
