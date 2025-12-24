@@ -68,6 +68,15 @@ impl History {
             .map(|command_prompt| command_prompt.as_str())
     }
 
+    pub fn get_next_prompt(&mut self) -> Option<&str> {
+        self.lookback_index = self.lookback_index.checked_sub(1)?;
+        let index = self.commands.len().checked_sub(self.lookback_index)?;
+
+        self.commands
+            .get(index)
+            .map(|command_prompt| command_prompt.as_str())
+    }
+
     pub fn reset_lookback(&mut self) {
         self.lookback_index = 0;
     }

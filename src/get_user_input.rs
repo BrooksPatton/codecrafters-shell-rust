@@ -49,9 +49,15 @@ impl UserInput {
                     user_input = previous_prompt.to_owned();
 
                     self.term.write(previous_prompt.as_bytes())?;
-                    self.term.flush()?;
                 }
-                Key::ArrowDown => todo!(),
+                Key::ArrowDown => {
+                    let next_prompt = history.get_next_prompt().unwrap_or_default();
+
+                    self.term.clear_line()?;
+                    self.print_prompt()?;
+                    user_input = next_prompt.to_owned();
+                    self.term.write(next_prompt.as_bytes())?;
+                }
                 Key::Enter => {
                     self.term.write_line("")?;
                     history.reset_lookback();
