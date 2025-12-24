@@ -94,18 +94,29 @@ impl History {
             return self.print_n(command_io, count);
         }
 
-        if first_argument == "-r" {
-            let Some(filename) = arguments.pop_front() else {
-                writeln!(command_io.stderr, "Error, history -r requires a path")?;
-                return Err(ErrorExitCode::new_const::<1>());
-            };
+        match first_argument.as_str() {
+            "-r" => {
+                let Some(filename) = arguments.pop_front() else {
+                    writeln!(command_io.stderr, "Error, history -r requires a path")?;
+                    return Err(ErrorExitCode::new_const::<1>());
+                };
 
-            return self.load_history_from_file(filename, command_io);
+                self.load_history_from_file(filename, command_io)
+            }
+            "-w" => {
+                let Some(filename) = arguments.pop_front() else {
+                    writeln!(command_io.stderr, "Error: history -w requires a path")?;
+                    return Err(ErrorExitCode::new_const::<9>());
+                };
+
+                self.write_history_to_file(command_io, filename)
+            }
+            _ => {
+                writeln!(command_io.stderr, "Error: Unkown option {first_argument}")?;
+                writeln!(command_io.stderr, "history [count]|[-r path]")?;
+                Err(ErrorExitCode::new_const::<5>())
+            }
         }
-
-        writeln!(command_io.stderr, "Error: incorrect usage of history.")?;
-        writeln!(command_io.stderr, "history [count]|[-r path]")?;
-        Err(ErrorExitCode::new_const::<5>())
     }
 
     fn load_history_from_file(
@@ -137,6 +148,41 @@ impl History {
                     return Err(ErrorExitCode::new_const::<4>());
                 }
             }
+        }
+
+        Ok(())
+    }
+
+    fn write_history_to_file(
+        &self,
+        mut command_io: CommandIO,
+        filename: String,
+    ) -> Result<(), ErrorExitCode> {
+        let path = Path::new(&filename);
+
+        if path.is_dir() {
+            writeln!(
+                command_io.stderr,
+                "Error: When writing history to file, given filename must not be a directory."
+            )?;
+            return Err(ErrorExitCode::new_const::<6>());
+        }
+
+        let mut file = match fs::File::options()
+            .write(true)
+            .truncate(true)
+            .create(true)
+            .open(path)
+        {
+            Ok(file) => file,
+            Err(error) => {
+                writeln!(command_io.stderr, "{error:?}")?;
+                return Err(ErrorExitCode::new_const::<7>());
+            }
+        };
+
+        for command in self.commands.iter() {
+            writeln!(file, "{command}")?;
         }
 
         Ok(())
